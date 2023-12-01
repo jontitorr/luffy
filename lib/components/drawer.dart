@@ -48,7 +48,7 @@ class CustomDrawer extends StatelessWidget {
               showThemeDialog(
                 context,
                 onThemeChange: (c) {
-                  MyApp.of(context)!.changeDarkThemeColor(c);
+                  MyApp.of(context)!.changeThemeColor(c);
                 },
               );
             },

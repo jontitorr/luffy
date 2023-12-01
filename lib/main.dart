@@ -71,7 +71,14 @@ class _MyAppState extends State<MyApp> {
   MalToken? _token;
   UserSettings? _settings;
 
-  void changeDarkThemeColor(Color color) {
+  void changeThemeColor(Color color) {
+    // TODO(xminent): Maybe add more customization in terms of being able to
+    // use light themes, despite being in a system dark theme.
+    _changeLightThemeColor(color);
+    _changeDarkThemeColor(color);
+  }
+
+  void _changeDarkThemeColor(Color color) {
     setState(() {
       if (_settings?.darkThemeColor == color) {
         prints("Same color");
@@ -82,7 +89,7 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  void changeLightThemeColor(Color color) {
+  void _changeLightThemeColor(Color color) {
     setState(() {
       if (_settings?.lightThemeColor == color) {
         prints("Same color");
@@ -141,7 +148,7 @@ class _MyAppState extends State<MyApp> {
 
     return MaterialApp(
       title: "Luffy",
-      theme: darkTheme(primaryColor: settings.lightThemeColor),
+      theme: lightTheme(primaryColor: settings.lightThemeColor),
       darkTheme: darkTheme(primaryColor: settings.darkThemeColor),
       home: settings.welcomeScreenShown
           ? const HomeScreen()
