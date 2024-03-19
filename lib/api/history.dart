@@ -1,6 +1,7 @@
 import "dart:convert";
 
 import "package:collection/collection.dart";
+import "package:color_log/color_log.dart";
 import "package:flutter_secure_storage/flutter_secure_storage.dart";
 import "package:luffy/api/anime.dart";
 import "package:luffy/util.dart";
@@ -95,58 +96,63 @@ class HistoryService {
       return _instance!;
     }
 
-    final historyStr = await _storage.read(key: "history");
+    try {
+      final historyStr = await _storage.read(key: "history");
 
-    prints("History: $historyStr");
+      prints("History: $historyStr");
 
-    final history = historyStr != null
-        ? (jsonDecode(historyStr) as List)
-            .map(
-              (e) => HistoryEntry(
-                id: e["id"],
-                animeId: e["anime_id"],
-                title: e["title"],
-                imageUrl: e["image_url"],
-                progress: e["progress"] != null
-                    ? Map.fromEntries(
-                        (e["progress"] as Map<String, dynamic>).entries.map(
-                              (e) => MapEntry(int.parse(e.key), e.value),
-                            ),
-                      )
-                    : {},
-                totalEpisodes: e["total_episodes"],
-                sources: e["sources"] != null
-                    ? Map.fromEntries(
-                        (e["sources"] as Map<String, dynamic>).entries.map(
-                              (e) => MapEntry(
-                                int.parse(e.key),
-                                (e.value as List)
-                                    .map((e) => VideoSource.fromJson(e))
-                                    .toList(),
+      final history = historyStr != null
+          ? (jsonDecode(historyStr) as List)
+              .map(
+                (e) => HistoryEntry(
+                  id: e["id"],
+                  animeId: e["anime_id"],
+                  title: e["title"],
+                  imageUrl: e["image_url"],
+                  progress: e["progress"] != null
+                      ? Map.fromEntries(
+                          (e["progress"] as Map<String, dynamic>).entries.map(
+                                (e) => MapEntry(int.parse(e.key), e.value),
                               ),
-                            ),
-                      )
-                    : {},
-                subtitles: e["subtitles"] != null
-                    ? Map.fromEntries(
-                        (e["subtitles"] as Map<String, dynamic>).entries.map(
-                              (e) => MapEntry(
-                                int.parse(e.key),
-                                (e.value as List)
-                                    .map((e) => Subtitle.fromJson(e))
-                                    .toList(),
+                        )
+                      : {},
+                  totalEpisodes: e["total_episodes"],
+                  sources: e["sources"] != null
+                      ? Map.fromEntries(
+                          (e["sources"] as Map<String, dynamic>).entries.map(
+                                (e) => MapEntry(
+                                  int.parse(e.key),
+                                  (e.value as List)
+                                      .map((e) => VideoSource.fromJson(e))
+                                      .toList(),
+                                ),
                               ),
-                            ),
-                      )
-                    : {},
-                sourceExpiration: DateTime.parse(e["source_expiration"]),
-                showUrl: e["show_url"],
-              ),
-            )
-            .toList()
-        : <HistoryEntry>[];
+                        )
+                      : {},
+                  subtitles: e["subtitles"] != null
+                      ? Map.fromEntries(
+                          (e["subtitles"] as Map<String, dynamic>).entries.map(
+                                (e) => MapEntry(
+                                  int.parse(e.key),
+                                  (e.value as List)
+                                      .map((e) => Subtitle.fromJson(e))
+                                      .toList(),
+                                ),
+                              ),
+                        )
+                      : {},
+                  sourceExpiration: DateTime.parse(e["source_expiration"]),
+                  showUrl: e["show_url"],
+                ),
+              )
+              .toList()
+          : <HistoryEntry>[];
 
-    _instance = HistoryService._internal(history);
+      _instance = HistoryService._internal(history);
+    } catch (e) {
+      prints("Failed to load history: $e", level: LogLevel.error);
+      _instance = HistoryService._internal(<HistoryEntry>[]);
+    }
 
     return _instance!;
   }

@@ -70,7 +70,9 @@ class VideoSource {
         subtitle = json["subtitle"] != null
             ? Subtitle.fromJson(json["subtitle"])
             : null,
-        headers = json["headers"] ?? {};
+        headers = json["headers"] != null
+            ? Map<String, String>.from(json["headers"])
+            : const {};
 
   final String videoUrl;
   final String description;
