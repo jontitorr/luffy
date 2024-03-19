@@ -23,12 +23,6 @@ Future main() async {
     await windowManager.ensureInitialized();
   }
 
-  if (!kIsWeb &&
-      kDebugMode &&
-      defaultTargetPlatform == TargetPlatform.android) {
-    // await InAppWebViewController.setWebContentsDebuggingEnabled(kDebugMode);
-  }
-
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.landscapeLeft,
@@ -39,20 +33,6 @@ Future main() async {
     await FlutterDisplayMode.setHighRefreshRate();
   }
 
-  // runApp(const MyApp());
-
-  // final animes = await Kaido.search("one piece");
-  // final episodes = await Kaido.loadEpisodes(animes[0], {});
-
-  // prints("episodes: $episodes");
-
-  // final skips = await AniSkip.getSkips(21, 2);
-  // prints("skips: $skips");
-
-  // final animes = await KickassAnime().search("one piece");
-  // final episodes = await KickassAnime().getEpisodes(animes[1]);
-  // final sources = await KickassAnime().getSources(episodes[0]);
-  // prints("sources: $sources");
   runApp(const MyApp());
 }
 
