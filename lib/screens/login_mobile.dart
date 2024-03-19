@@ -109,12 +109,7 @@ class _LoginMobileScreenState extends State<LoginMobileScreen> {
     prints(json);
 
     final token = await MalToken.getInstance(
-      token: {
-        "access_token": json["access_token"],
-        "refresh_token": json["refresh_token"],
-        "expiration_time":
-            DateTime.now().millisecondsSinceEpoch + json["expires_in"] * 1000,
-      },
+      json: json,
     );
 
     if (context.mounted) {

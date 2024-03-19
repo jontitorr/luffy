@@ -1,70 +1,98 @@
 import "dart:convert";
-import "dart:developer";
 
+import "package:color_log/color_log.dart";
 import "package:flutter_secure_storage/flutter_secure_storage.dart";
 import "package:http/http.dart" as http;
+import "package:luffy/util.dart";
 
-const String malClientId = "688adc65bbae7a2517e8d8ed7cff8c28";
-// const String _malApiBaseUrl = 'https://api.myanimelist.net/v2';
+const _storage = FlutterSecureStorage();
+const malClientId = "688adc65bbae7a2517e8d8ed7cff8c28";
 
 class MalToken {
-  MalToken._(this.accessToken, this.expirationTime);
-  static MalToken? _instance;
-  String accessToken;
-  int expirationTime;
+  MalToken._({
+    this.accessToken,
+    this.expirationTime,
+  });
+
+  String? accessToken;
+  int? expirationTime;
+  bool canRefresh = true;
+
+  static MalToken _instance = MalToken._();
 
   bool isValid() {
-    return accessToken.isNotEmpty &&
-        expirationTime > 0 &&
-        DateTime.now().millisecondsSinceEpoch < expirationTime;
+    if (accessToken == null || expirationTime == null) {
+      return false;
+    }
+
+    final token = accessToken!;
+    final exp = expirationTime!;
+
+    return token.isNotEmpty &&
+        exp > 0 &&
+        DateTime.now().millisecondsSinceEpoch < exp;
   }
 
   static Future<MalToken?> getInstance({
-    Map<String, dynamic>? token,
+    Map<String, dynamic>? json,
   }) async {
-    if (_instance == null) {
-      const storage = FlutterSecureStorage();
+    final accessToken = json?["access_token"];
+    int? expirationTime;
 
-      final accessToken = await storage.read(key: "access_token");
-      final expirationTime = await storage.read(key: "expiration_time");
-
-      if (accessToken == null || expirationTime == null) {
-        return null;
-      }
-
-      _instance = MalToken._(accessToken, int.parse(expirationTime));
+    if (json?["expires_in"] != null) {
+      expirationTime = (DateTime.now().millisecondsSinceEpoch +
+          json!["expires_in"] * 1000) as int?;
     }
 
-    if (!_instance!.isValid()) {
-      await _instance!.refresh();
+    if (accessToken != null && expirationTime != null) {
+      _instance.accessToken = accessToken;
+      _instance.expirationTime = expirationTime;
+    }
+
+    if (!_instance.isValid()) {
+      await _instance.refresh();
     }
 
     return _instance;
   }
 
-  Future<void> set(Map<String, dynamic> token) async {
-    const storage = FlutterSecureStorage();
-    await storage.write(key: "access_token", value: token["access_token"]);
-    await storage.write(
+  Future<void> set({
+    String? accessToken,
+    String? refreshToken,
+    int? expirationTime,
+  }) async {
+    if (accessToken == null || expirationTime == null) {
+      return;
+    }
+
+    await _storage.write(key: "access_token", value: accessToken);
+    await _storage.write(
       key: "expiration_time",
-      value: token["expiration_time"].toString(),
+      value: expirationTime.toString(),
     );
-    await storage.write(key: "refresh_token", value: token["refresh_token"]);
+    await _storage.write(key: "refresh_token", value: refreshToken);
 
     _instance = MalToken._(
-      token["access_token"],
-      token["expiration_time"],
+      accessToken: accessToken,
+      expirationTime: expirationTime,
     );
   }
 
   Future<void> refresh() async {
-    log("refreshing token...");
+    if (!_instance.canRefresh) {
+      prints(
+        "cannot refresh token, skipping...",
+      );
+      return;
+    }
 
-    const storage = FlutterSecureStorage();
-    final refresh = await storage.read(key: "refresh_token");
+    prints("refreshing token...");
+
+    final refresh = await _storage.read(key: "refresh_token");
 
     if (refresh == null) {
-      log("refresh token not found");
+      _instance.canRefresh = false;
+      prints("refresh token not found");
       return;
     }
 
@@ -78,18 +106,22 @@ class MalToken {
             "grant_type=refresh_token&refresh_token=$refresh&client_id=$malClientId",
       );
 
-      log({"refreshResponse": response.body}.toString());
+      prints({"refreshResponse": response.body});
 
       final json = jsonDecode(response.body);
+      int? expirationTime;
 
-      final expirationTime =
-          DateTime.now().millisecondsSinceEpoch + json["expires_in"] * 1000;
+      if (json["expires_in"] != null) {
+        expirationTime = (DateTime.now().millisecondsSinceEpoch +
+            json["expires_in"] * 1000) as int?;
+      }
 
-      json["expiration_time"] = expirationTime;
-
-      await _instance?.set(json);
+      await _instance.set(
+        accessToken: json["access_token"],
+        expirationTime: expirationTime,
+      );
     } catch (e) {
-      log("Failed to refresh token: $e");
+      prints("Failed to refresh token: $e", level: LogLevel.error);
     }
   }
 }

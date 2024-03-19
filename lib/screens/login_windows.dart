@@ -7,7 +7,6 @@ import "package:flutter/services.dart";
 import "package:http/http.dart" as http;
 import "package:luffy/auth.dart";
 import "package:luffy/main.dart";
-import "package:luffy/util.dart";
 import "package:webview_windows/webview_windows.dart";
 
 const malRedirectUri = "https://localhost/authorize";
@@ -230,17 +229,8 @@ class LoginWindowsScreenState extends State<LoginWindowsScreen> {
       return;
     }
 
-    final json = jsonDecode(response.body);
-
-    prints(json);
-
     final token = await MalToken.getInstance(
-      token: {
-        "access_token": json["access_token"],
-        "refresh_token": json["refresh_token"],
-        "expiration_time":
-            DateTime.now().millisecondsSinceEpoch + json["expires_in"] * 1000,
-      },
+      json: jsonDecode(response.body),
     );
 
     if (context.mounted) {
