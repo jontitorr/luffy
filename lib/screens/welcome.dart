@@ -36,7 +36,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   Future<List<_Data>> _getData() async {
     final res = await http.get(
       Uri.parse(
-        "https://gist.githubusercontent.com/zunjae/36b97f4ba3d83737aeaed192012950d4/raw/",
+        "https://gist.githubusercontent.com/jontitorr/933b1bedeba5aa71018ed40d54802f87/raw/419baffd17fafb14b1e636c3ed64cdc8f5ff41f3/luffy",
       ),
     );
     final data = jsonDecode(res.body);
