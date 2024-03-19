@@ -58,6 +58,7 @@ class _SearchScreenState extends State<SearchScreen>
                   },
                 ),
               ),
+              const SizedBox(height: 8),
               Flexible(
                 flex: 10,
                 child: SizedBox(
@@ -83,7 +84,7 @@ class _SearchScreenState extends State<SearchScreen>
                         );
                       }
 
-                      return ListView.builder(
+                      return GridView.builder(
                         itemCount: searchResults.length,
                         itemBuilder: (context, idx) => AnimeCard(
                           anime: searchResults[idx],
@@ -91,6 +92,14 @@ class _SearchScreenState extends State<SearchScreen>
                           height: 200,
                           showTitle: true,
                           opensDetails: true,
+                        ),
+                        gridDelegate:
+                            const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 125,
+                          mainAxisExtent: 200,
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 24,
+                          childAspectRatio: 3 / 2,
                         ),
                       );
                     },
