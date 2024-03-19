@@ -147,22 +147,20 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Flexible(
-                                        child: Column(
-                                          children: [
-                                            Flexible(
-                                              child: AnimeCard(
-                                                anime: anime,
-                                              ),
+                                      Column(
+                                        children: [
+                                          Flexible(
+                                            child: AnimeCard(
+                                              anime: anime,
                                             ),
-                                            const SizedBox(
-                                              height: 8,
-                                            ),
-                                            Text(
-                                              "${anime.episodes} episodes",
-                                            ),
-                                          ],
-                                        ),
+                                          ),
+                                          const SizedBox(
+                                            height: 8,
+                                          ),
+                                          Text(
+                                            "${anime.episodes} episodes",
+                                          ),
+                                        ],
                                       ),
                                       const SizedBox(
                                         width: 8,
