@@ -1,5 +1,4 @@
 import "package:html/dom.dart";
-import "package:html/parser.dart";
 import "package:luffy/api/sources/animeflix.dart";
 import "package:luffy/api/sources/animepahe.dart";
 import "package:luffy/api/sources/gogoanime.dart";
@@ -62,6 +61,7 @@ class VideoSource {
     required this.videoUrl,
     required this.description,
     this.subtitle,
+    this.headers = const {},
   });
 
   VideoSource.fromJson(Map<String, dynamic> json)
@@ -69,17 +69,20 @@ class VideoSource {
         description = json["description"],
         subtitle = json["subtitle"] != null
             ? Subtitle.fromJson(json["subtitle"])
-            : null;
+            : null,
+        headers = json["headers"] ?? {};
 
   final String videoUrl;
   final String description;
   final Subtitle? subtitle;
+  final Map<String, String> headers;
 
   Map<String, dynamic> toJson() {
     return {
       "videoUrl": videoUrl,
       "description": description,
       "subtitle": subtitle?.toJson(),
+      "headers": headers,
     };
   }
 }
@@ -115,20 +118,6 @@ abstract class AnimeParser {
 
   Episode episodeFromElement(Element element, String url);
 }
-
-List<Anime> searchAnimeParse(AnimeParser parser, String response) {
-  return parse(response)
-      .querySelectorAll(parser.searchAnimeSelector)
-      .map(parser.searchAnimeFromElement)
-      .toList();
-}
-
-// List<Episode> episodeListParse(AnimeParser parser, String response) {
-//   return parse(response)
-//       .querySelectorAll(parser.episodeSelector)
-//       .map(parser.episodeFromElement)
-//       .toList();
-// }
 
 final sources = [
   AnimeFlixExtractor(),

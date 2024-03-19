@@ -29,8 +29,11 @@ Future<String> readResponse(HttpClientResponse response) {
   return completer.future;
 }
 
-void prints(s1) {
-  if (!kDebugMode) {
+void prints(
+  s1, {
+  LogLevel level = LogLevel.debug,
+}) {
+  if (level == LogLevel.debug && !kDebugMode) {
     return;
   }
 
@@ -41,7 +44,15 @@ void prints(s1) {
     final m = match.group(0);
 
     if (m != null) {
-      clog.debug(m);
+      if (level == LogLevel.info) {
+        clog.info(m);
+      } else if (level == LogLevel.warning) {
+        clog.warning(m);
+      } else if (level == LogLevel.error) {
+        clog.error(m);
+      } else if (level == LogLevel.debug) {
+        clog.debug(m);
+      }
     }
   });
 }
@@ -109,5 +120,11 @@ extension StringExtensions on String {
 
   String unescapedJson() {
     return _unescapedJsonStringImpl(this);
+  }
+}
+
+extension LetExtension<T> on T {
+  R let<R>(R Function(T) block) {
+    return block(this);
   }
 }

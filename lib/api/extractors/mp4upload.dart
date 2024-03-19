@@ -1,38 +1,70 @@
+import "package:html/parser.dart";
 import "package:http/http.dart" as http;
-import "package:luffy/api/sources/nineanime.dart";
+import "package:luffy/api/anime.dart";
+import "package:luffy/js_unpacker.dart";
 import "package:luffy/util.dart";
 
-class Mp4uploadExtractor {
-  Future<List<Video>> videosFromUrl(
-    String url,
-    String prefix,
-  ) async {
-    final id = url.substringAfterLast("embed-").substringBeforeLast(".html");
+final _qualityRegex = RegExp(r"\WHEIGHT=(\d+)");
+const _referer = "https://mp4upload.com/";
 
-    final params = {
-      "op": "download2",
-      "id": id,
-      "rand": "",
-      "referer": url,
-      "method_free": "+",
-      "method_premiun": "",
-    };
+Future<List<VideoSource>> mp4UploadExtractor(
+  String url, {
+  Map<String, String> headers = const {},
+  String prefix = "",
+  String suffix = "",
+}) async {
+  final newHeaders = Map<String, String>.from(headers)
+    ..addAll({"referer": _referer});
 
-    final res = await http.post(
-      Uri.parse(url),
-      body: params,
-    );
+  try {
+    final response = await http.get(Uri.parse(url), headers: newHeaders);
+    String script = "";
 
-    // Return the location response header.
-    final location = res.headers["location"];
+    final document = parse(response.body);
+    final scriptElementWithEval = document
+        .querySelectorAll("script")
+        .where(
+          (script) =>
+              script.text.contains("eval") &&
+              script.text.contains("p,a,c,k,e,d"),
+        )
+        .map((script) => script.text)
+        .toList();
+
+    if (scriptElementWithEval.isNotEmpty) {
+      script = JsUnpacker.unpack(script).first;
+    } else {
+      final document = parse(response.body);
+      final scriptElementWithSrc = document
+          .querySelectorAll("script")
+          .where((script) => script.innerHtml.contains("player.src"))
+          .map((script) => script.innerHtml)
+          .toList();
+      if (scriptElementWithSrc.isNotEmpty) {
+        script = scriptElementWithSrc.first;
+      } else {
+        return [];
+      }
+    }
+
+    final videoUrl = script
+        .substringAfter(".src(")
+        .substringBefore(")")
+        .substringAfter("src:")
+        .substringAfter('"')
+        .substringBefore('"');
+    final resolutionMatch = _qualityRegex.firstMatch(script);
+    final resolution = resolutionMatch?.group(1) ?? "Unknown resolution";
+    final quality = "$prefix Mp4Upload - ${resolution}p $suffix";
 
     return [
-      Video(
-        location!,
-        prefix,
-        location,
-        {},
+      VideoSource(
+        videoUrl: videoUrl,
+        description: quality,
+        headers: newHeaders,
       ),
     ];
+  } catch (_) {
+    return [];
   }
 }

@@ -1,57 +1,38 @@
 import "dart:async";
 
+import "package:html/parser.dart";
 import "package:http/http.dart" as http;
+import "package:luffy/api/anime.dart";
+import "package:luffy/util.dart";
 
-class Streamtape {
-  static Future<String> getRedirectURL(String url) async {
-    try {
-      final http.Response response = await http.head(
-        Uri.parse(url),
-        headers: {
-          "referer": "https://streamtape.com/e/zXpWQGbKy9Ce76/",
-        },
-      );
-      return response.headers["location"]!;
-    } catch (error) {
-      rethrow;
+Future<List<VideoSource>> streamtapeExtractor(
+  String url, {
+  String quality = "StreamTape",
+}) async {
+  try {
+    const baseUrl = "https://streamtape.com/e/";
+    final newUrl =
+        !url.startsWith(baseUrl) ? "$baseUrl${url.split("/")[4]}" : url;
+
+    final response = await http.get(Uri.parse(newUrl));
+    final document = parse(response.body);
+
+    const targetLine = "document.getElementById('robotlink')";
+    String script = "";
+    final scri = document
+        .querySelectorAll("script")
+        .where((element) => element.innerHtml.contains(targetLine))
+        .map((e) => e.innerHtml)
+        .toList();
+    if (scri.isEmpty) {
+      return [];
     }
-  }
+    script = scri.first.split("$targetLine.innerHTML = '").last;
+    final videoUrl =
+        "https:${script.substringBefore("'")}${script.substringAfter("+ ('xcd").substringBefore("'")}";
 
-  static Future<String?> extract(String id) async {
-    var res = await http.get(
-      Uri.parse("https://streamtape.com/e/$id"),
-      headers: {"referer": "https://streamtape.com/e/zXpWQGbKy9Ce76/"},
-    );
-    var match = RegExp(r"robotlink'\).innerHTML = (.*);").firstMatch(res.body);
-    final urlComp = match?.group(1);
-
-    if (urlComp == null) {
-      return null;
-    }
-
-    var offset = 3;
-    var tempOffset = 0;
-    final substrSplit = urlComp.split("substring(");
-
-    for (var i = 1; i < substrSplit.length; i++) {
-      tempOffset += int.parse(substrSplit[i]);
-    }
-
-    if (!tempOffset.isNaN) {
-      offset = tempOffset;
-    }
-
-    match = RegExp(r"robotlink'\).innerHTML = '(.*)'").firstMatch(res.body);
-    final mainUrlComp = match?.group(1);
-    final mainUrlCompSplit = mainUrlComp?.split("'+ ('") ?? [];
-    mainUrlCompSplit[1] = mainUrlCompSplit[1].substring(offset);
-
-    final url = "https:${mainUrlCompSplit.join()}";
-
-    res = await http.head(
-      Uri.parse(url),
-    );
-
-    return res.headers["location"]!;
+    return [VideoSource(videoUrl: videoUrl, description: quality)];
+  } catch (_) {
+    return [];
   }
 }

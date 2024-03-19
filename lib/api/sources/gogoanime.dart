@@ -1,16 +1,14 @@
-import "dart:convert";
-
 import "package:collection/collection.dart";
-import "package:encrypt/encrypt.dart";
 import "package:html/parser.dart";
 import "package:http/http.dart" as http;
 import "package:luffy/api/anime.dart";
+import "package:luffy/api/extractors/dood.dart";
+import "package:luffy/api/extractors/gogocdn.dart";
+import "package:luffy/api/extractors/mp4upload.dart";
+import "package:luffy/api/extractors/streamwish.dart";
 import "package:luffy/util.dart";
 
 const _baseUrl = "https://anitaku.to";
-final _gogoSecretKey = Key.fromUtf8("37911490979715163134003223491201");
-final _gogoSecretKey2 = Key.fromUtf8("54674138327930866480207815084989");
-final _gogoSecretIv = IV.fromUtf8("3134003223491201");
 
 class GogoAnimeExtractor extends AnimeExtractor {
   @override
@@ -91,10 +89,10 @@ class GogoAnimeExtractor extends AnimeExtractor {
 
     final res2 = await http.get(
       Uri.parse(
-        "https://ajax.gogo-load.com/ajax/load-list-episode?ep_start=0&ep_end=$lastEpisode&id=$animeId",
+        "https://ajax.gogocdn.net/ajax/load-list-episode?ep_start=0&ep_end=$lastEpisode&id=$animeId",
       ),
       headers: {
-        "x-requested-with": "XMLHttpRequest",
+        "Referer": "https://anitaku.to/",
       },
     );
 
@@ -128,177 +126,55 @@ class GogoAnimeExtractor extends AnimeExtractor {
 
   @override
   Future<List<VideoSource>> getSources(Episode episode) async {
-    final headers = {
-      "x-requested-with": "XMLHttpRequest",
-    };
-
-    final res = await http.get(
-      Uri.parse(episode.url),
-      headers: headers,
-    );
-
-    final videoUrl = _parseUrls(res.body)?.videoUrl;
-
-    if (videoUrl == null) {
-      return [];
+    Future<http.Response> req(String url) {
+      return http.get(
+        Uri.parse(url),
+        headers: {
+          "x-requested-with": "XMLHttpRequest",
+        },
+      );
     }
 
-    final id = RegExp(r"id=([^&]+)")
-        .firstMatch(videoUrl)
-        ?.group(1)
-        ?.replaceFirst("id=", "");
-
-    if (id == null) {
-      return [];
-    }
-
-    final res2 = await http.get(
-      Uri.parse(
-        videoUrl,
-      ),
-      headers: headers,
-    );
-
-    final ajaxResponse = await _parseEncryptAjax(res2.body, id);
-
-    if (ajaxResponse == null) {
-      return [];
-    }
-
-    final streamUrl = "https://anihdplay.com/encrypt-ajax.php?$ajaxResponse";
-
-    final res3 = await http.get(
-      Uri.parse(streamUrl),
-      headers: headers,
-    );
-
-    final sources = await _parseStreamUrl(jsonDecode(res3.body));
-
-    prints(sources);
-
-    return sources
-        .map(
-          (e) => VideoSource(
-            videoUrl: e,
-            description: "GogoAnime",
-          ),
-        )
+    final res = await req(episode.url);
+    final document = parse(res.body);
+    final serverElements = document
+            .querySelector(".anime_muti_link")
+            ?.querySelector("ul")
+            ?.querySelectorAll("li")
+            .toList() ??
+        [];
+    final serverUrls = serverElements
+        .map((e) => e.querySelector("a")?.attributes["data-video"])
+        .whereNotNull()
         .toList();
-  }
-}
+    final serverNames = serverElements.map((e) => e.classes.first).toList();
+    final ret = <VideoSource>[];
 
-class EpisodeInfo {
-  EpisodeInfo({
-    this.nextEpisodeUrl,
-    this.prevEpisodeUrl,
-    this.videoUrl,
-  });
+    for (final pair in IterableZip([serverNames, serverUrls])) {
+      final name = pair[0];
+      final url = pair[1];
 
-  final String? nextEpisodeUrl;
-  final String? prevEpisodeUrl;
-  final String? videoUrl;
-}
+      if (name.contains("anime") || name.contains("vidcdn")) {
+        ret.addAll(await gogoCdnExtractor(url));
+      } else if (name.contains("doodstream")) {
+        ret.addAll(await doodExtractor(url));
+      } else if (name.contains("mp4upload")) {
+        ret.addAll(await mp4UploadExtractor(url));
+      } else if (name.contains("filelions")) {
+        ret.addAll(await streamWishExtractor(url, "FileLions"));
+      } else if (name.contains("streamwish")) {
+        ret.addAll(await streamWishExtractor(url, "StreamWish"));
+      }
+    }
 
-EpisodeInfo? _parseUrls(String body) {
-  final root = parse(body);
-  final info = root.querySelector(".vidcdn")?.querySelector("a");
+    final seen = <String>{};
+    ret.retainWhere((element) => seen.add(element.videoUrl));
 
-  if (info == null) {
-    return null;
-  }
+    prints("Found sources for ${episode.title}: ${ret.length} sources:");
+    for (final source in ret) {
+      prints("\t${source.description} (${source.videoUrl})");
+    }
 
-  var mediaUrl = info.attributes["data-video"];
-
-  if (mediaUrl == null) {
-    return null;
-  }
-
-  if (mediaUrl.startsWith("//")) {
-    mediaUrl = "https:$mediaUrl";
-  }
-
-  final nextEpisodeUrl = root
-      .querySelector(".anime_video_body_episodes_r")
-      ?.querySelector("a")
-      ?.attributes["href"];
-
-  final previousEpisodeUrl = root
-      .querySelector(".anime_video_body_episodes_l")
-      ?.querySelector("a")
-      ?.attributes["href"];
-
-  return EpisodeInfo(
-    nextEpisodeUrl: nextEpisodeUrl,
-    prevEpisodeUrl: previousEpisodeUrl,
-    videoUrl: mediaUrl,
-  );
-}
-
-Future<String?> _parseEncryptAjax(
-  String body,
-  String id,
-) async {
-  final root = parse(body);
-  // Return script who has a data-name and data-value attributes.
-  final script = root.querySelector("script[data-name][data-value]");
-
-  if (script == null) {
-    return null;
-  }
-
-  final value = script.attributes["data-value"];
-
-  if (value == null) {
-    return null;
-  }
-
-  final decrypted = (await _decryptAes(value, _gogoSecretKey, _gogoSecretIv))
-      .replaceAll("\t", "")
-      .substring(id.length);
-
-  final encrypted = await _encryptAes(id, _gogoSecretKey, _gogoSecretIv);
-
-  return "id=$encrypted$decrypted&alias=$id";
-}
-
-Future<String> _encryptAes(String text, Key key, IV iv) async {
-  final encrypter = Encrypter(AES(key, mode: AESMode.cbc));
-  final encrypted = encrypter.encrypt(text, iv: iv);
-  return encrypted.base64;
-}
-
-Future<String> _decryptAes(String encrypted, Key key, IV iv) async {
-  final encrypter = Encrypter(AES(key, mode: AESMode.cbc));
-  final decrypted = encrypter.decrypt64(encrypted, iv: iv);
-  return decrypted;
-}
-
-Future<List<String>> _parseStreamUrl(Map<String, dynamic> body) async {
-  final ret = <String>[];
-
-  final decrypted = (await _decryptAes(
-    body["data"],
-    _gogoSecretKey2,
-    _gogoSecretIv,
-  ))
-      .replaceAll('o"<P{#meme":"', 'e":[{"file":');
-
-  final json = jsonDecode(decrypted);
-  final sources = json["source"];
-
-  if (sources == null) {
     return ret;
   }
-
-  for (final source in sources) {
-    final file = source["file"];
-
-    if (file == null) {
-      continue;
-    }
-
-    ret.add(file);
-  }
-
-  return ret;
 }
