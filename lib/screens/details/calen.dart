@@ -82,65 +82,63 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   }).toList(),
                 ),
               ),
-              body: SizedBox(
-                height: MediaQuery.of(context).size.height,
-                child: TabBarView(
-                  children: topAnimes.weekly.map((list) {
-                    return GridView.builder(
+              body: TabBarView(
+                children: topAnimes.weekly.map((list) {
+                  return Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: GridView.builder(
                       gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        childAspectRatio: 120 / 150,
-                        mainAxisSpacing: 16,
-                        crossAxisSpacing: 16,
+                          const SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: 125,
+                        mainAxisExtent: 200,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 24,
+                        childAspectRatio: 3 / 2,
                       ),
                       itemCount: list.length,
                       itemBuilder: (context, index) {
                         final anime = list[index].media;
 
-                        return Center(
-                          child: GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => DetailsScreen(
-                                    animeId: anime.id,
-                                    malId: anime.malId,
-                                    title: anime.titleUserPreferred,
-                                    imageUrl: anime.coverImage,
-                                    bannerImageUrl: anime.bannerImage,
-                                    titleRomaji: anime.titleRomaji,
-                                    totalEpisodes: anime.episodes,
-                                  ),
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => DetailsScreen(
+                                  animeId: anime.id,
+                                  malId: anime.malId,
+                                  title: anime.titleUserPreferred,
+                                  imageUrl: anime.coverImage,
+                                  bannerImageUrl: anime.bannerImage,
+                                  titleRomaji: anime.titleRomaji,
+                                  totalEpisodes: anime.episodes,
                                 ),
-                              );
-                            },
-                            child: Column(
-                              children: [
-                                Expanded(
-                                  child: AnimeCard(
-                                    anime: anime,
-                                    width: 120,
-                                    height: 150,
-                                  ),
+                              ),
+                            );
+                          },
+                          child: Column(
+                            children: [
+                              Expanded(
+                                child: AnimeCard(
+                                  anime: anime,
+                                  width: 120,
+                                  height: 150,
                                 ),
-                                const SizedBox(height: 16),
-                                Expanded(
-                                  child: Text(
-                                    anime.titleUserPreferred,
-                                    style:
-                                        Theme.of(context).textTheme.labelSmall,
-                                  ),
+                              ),
+                              const SizedBox(height: 16),
+                              Expanded(
+                                child: Text(
+                                  anime.titleUserPreferred,
+                                  style: Theme.of(context).textTheme.labelSmall,
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         );
                       },
-                    );
-                  }).toList(),
-                ),
+                    ),
+                  );
+                }).toList(),
               ),
             ),
           ),
