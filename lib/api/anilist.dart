@@ -89,7 +89,7 @@ class AnimeInfo {
   final int id;
   final bool isFavorite;
   final String siteUrl;
-  final int malId;
+  final int? malId;
   final NextAiringEpisode? nextAiringEpisode;
   final String? source;
   final String countryOfOrigin;
@@ -101,7 +101,7 @@ class AnimeInfo {
   final DateTime? endDate;
   final List<String> genres;
   final List<Studio> studios;
-  final String description;
+  final String? description;
   final String? trailer;
   final List<String> synonyms;
   final List<Tag> tags;
