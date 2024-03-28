@@ -109,7 +109,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                   style: Theme.of(context)
                                       .textTheme
                                       .titleMedium
-                                      ?.copyWith(fontWeight: FontWeight.bold),
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
                                 ),
                               ),
                             ),
