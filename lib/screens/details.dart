@@ -187,8 +187,10 @@ class _DetailsScreenState extends State<DetailsScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title:
+            Text(widget.title, style: Theme.of(context).textTheme.titleMedium),
         actions: _goToMyAnimeList(),
+        iconTheme: Theme.of(context).iconTheme,
       ),
       body: TabBarView(
         controller: _tabController,
