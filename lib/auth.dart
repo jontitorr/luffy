@@ -124,4 +124,12 @@ class MalToken {
       prints("Failed to refresh token: $e", level: LogLevel.error);
     }
   }
+
+  static Future<void> invalidate() async {
+    _instance = MalToken._();
+    await _storage.delete(key: "access_token");
+    await _storage.delete(key: "expiration_time");
+    await _storage.delete(key: "refresh_token");
+    prints("token cleared");
+  }
 }

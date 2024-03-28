@@ -1,15 +1,36 @@
 import "dart:convert";
 
 import "package:collection/collection.dart";
+import "package:flutter/widgets.dart";
 import "package:flutter_secure_storage/flutter_secure_storage.dart";
 import "package:html/parser.dart";
 import "package:http/http.dart" as http;
 import "package:luffy/auth.dart";
+import "package:luffy/main.dart";
 import "package:luffy/util.dart";
 import "package:tuple/tuple.dart";
 
 int _apiReqCounter = 0;
 const _storage = FlutterSecureStorage();
+
+class _HttpClient {
+  static Future<http.Response> get(
+    String url, {
+    BuildContext? context,
+    Map<String, String>? headers,
+  }) async {
+    final res = await http.get(Uri.parse(url), headers: headers);
+
+    if (res.statusCode == 401 && url.startsWith(_malApiBaseUrl)) {
+      await MalToken.invalidate();
+      if (context != null) {
+        MyApp.of(context)!.setToken(null);
+      }
+    }
+
+    return res;
+  }
+}
 
 class Relation {
   Relation({
@@ -365,7 +386,9 @@ class UserInfo {
 class MalService {
   static int apiReqCounter = 0;
 
-  static Future<UserInfo?> getUserInfo() async {
+  static Future<UserInfo?> getUserInfo({
+    BuildContext? context,
+  }) async {
     final token = await MalToken.getInstance();
 
     if (token == null) {
@@ -373,11 +396,12 @@ class MalService {
     }
 
     try {
-      final res = await http.get(
-        Uri.parse("$_malApiBaseUrl/users/@me"),
+      final res = await _HttpClient.get(
+        "$_malApiBaseUrl/users/@me",
         headers: {
           "Authorization": "Bearer ${token.accessToken}",
         },
+        context: context,
       );
 
       if (res.statusCode != 200) {
@@ -411,8 +435,8 @@ class MalService {
 
   static Future<List<AnimeCharacter>?> getAnimeCharacters(int id) async {
     try {
-      final res = await http.get(
-        Uri.parse("https://myanimelist.net/anime/$id/anime/characters"),
+      final res = await _HttpClient.get(
+        "https://myanimelist.net/anime/$id/anime/characters",
         headers: {
           "User-Agent":
               "Mozilla/5.0 (Linux; Android 10; SAMSUNG SM-G965F) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/12.1 Chrome/79.0.3945.136 Mobile Safari/537.36",
@@ -469,7 +493,7 @@ class MalService {
       // prints("Got anime characters: ${jsonEncode(characters)}");
 
       final res =
-          await http.get(Uri.parse("https://api.jikan.moe/v4/anime/$id/full"));
+          await _HttpClient.get("https://api.jikan.moe/v4/anime/$id/full");
 
       if (res.statusCode != 200) {
         throw Exception("Status Code: ${res.statusCode}");
@@ -552,10 +576,8 @@ class MalService {
 
       final pageToUse = page.clamp(1, double.infinity).toInt();
 
-      final res = await http.get(
-        Uri.parse(
-          "https://api.jikan.moe/v4/anime/$id/episodes?page=$pageToUse",
-        ),
+      final res = await _HttpClient.get(
+        "https://api.jikan.moe/v4/anime/$id/episodes?page=$pageToUse",
       );
 
       if (res.statusCode != 200) {
@@ -610,8 +632,8 @@ class MalService {
     }
 
     try {
-      final res = await http.get(
-        Uri.parse("$_malApiBaseUrl/anime/$id"),
+      final res = await _HttpClient.get(
+        "$_malApiBaseUrl/anime/$id",
         headers: {
           "Authorization": "Bearer ${token.accessToken}",
         },
@@ -672,10 +694,8 @@ class MalService {
     }
 
     try {
-      final res = await http.get(
-        Uri.parse(
-          "https://myanimelist.net/animelist/${userInfo.name}&view=tile&status=7&order=5",
-        ),
+      final res = await _HttpClient.get(
+        "https://myanimelist.net/animelist/${userInfo.name}&view=tile&status=7&order=5",
         headers: {
           "User-Agent":
               "Mozilla/5.0 (Linux; Android 10; SAMSUNG SM-G965F) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/12.1 Chrome/79.0.3945.136 Mobile Safari/537.36",
@@ -851,10 +871,8 @@ class MalService {
 
   static Future<List<TopAnimeResult>?> getTopAnimes() async {
     try {
-      final res = await http.get(
-        Uri.parse(
-          "https://gist.githubusercontent.com/zunjae/368b0550e9b2b0ce4318c4d3975e5d03/raw",
-        ),
+      final res = await _HttpClient.get(
+        "https://gist.githubusercontent.com/zunjae/368b0550e9b2b0ce4318c4d3975e5d03/raw",
       );
 
       if (res.statusCode != 200) {
@@ -900,8 +918,8 @@ class MalService {
 
   static Future<List<SearchResult>?> search(String query) async {
     try {
-      final res = await http.get(
-        Uri.parse("https://myanimelist.net/anime.php?q=$query&show=0"),
+      final res = await _HttpClient.get(
+        "https://myanimelist.net/anime.php?q=$query&show=0",
         headers: {
           "User-Agent":
               "Mozilla/5.0 (Linux; Android 10; SAMSUNG SM-G965F) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/12.1 Chrome/79.0.3945.136 Mobile Safari/537.36",
@@ -973,8 +991,8 @@ class MalService {
     final ret = <Episode>[];
 
     try {
-      var res = await http.get(
-        Uri.parse("https://api.jikan.moe/v4/anime/$animeId/episodes?page=1"),
+      var res = await _HttpClient.get(
+        "https://api.jikan.moe/v4/anime/$animeId/episodes?page=1",
       );
 
       var data = jsonDecode(res.body);
@@ -985,10 +1003,8 @@ class MalService {
       }
 
       while (data["pagination"]?["has_next_page"] ?? false) {
-        res = await http.get(
-          Uri.parse(
-            "https://api.jikan.moe/v4/anime/$animeId/episodes?page=${page++}",
-          ),
+        res = await _HttpClient.get(
+          "https://api.jikan.moe/v4/anime/$animeId/episodes?page=${page++}",
         );
 
         data = jsonDecode(res.body);
@@ -1194,10 +1210,8 @@ Future<AnimeList> _convertJsonToAnimeList(Map<String, dynamic> json) async {
 
   if (missingEpisodes.isNotEmpty) {
     try {
-      final res = await http.get(
-        Uri.parse(
-          "https://gist.githubusercontent.com/zunjae/06a5e039526121e6f25ef161cc850c2f/raw/",
-        ),
+      final res = await _HttpClient.get(
+        "https://gist.githubusercontent.com/zunjae/06a5e039526121e6f25ef161cc850c2f/raw/",
       );
 
       if (res.statusCode != 200) {

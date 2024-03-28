@@ -47,7 +47,7 @@ class _ListScreenState extends State<ListScreen>
 
     return _Data(
       animeList: animeList,
-      userInfo: await MalService.getUserInfo(),
+      userInfo: await MalService.getUserInfo(context: context),
     );
   }
 
@@ -87,6 +87,7 @@ class _ListScreenState extends State<ListScreen>
             length: _tabNames.length,
             child: Scaffold(
               appBar: AppBar(
+                iconTheme: Theme.of(context).iconTheme,
                 title: Row(
                   children: [
                     CachedNetworkImage(
