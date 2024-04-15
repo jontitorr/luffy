@@ -82,17 +82,22 @@ class _WatchScreenState extends State<WatchScreen>
   Future<Anime?> _getAnime(
     bool firstTime,
   ) async {
-    if (!firstTime) {
+    Future<Anime?> bestMatch() async {
       final results = await _extractor.search(widget.title);
 
       if (results.isEmpty) {
         return null;
       }
 
-      final titles = results.map((e) => e.title.toLowerCase()).toList();
+      final titles = results.map((e) => e.title).toList();
+      prints("Matching $widget.title against: $titles");
+      final best = widget.title.bestMatch(titles);
+      prints("Ratings: ${best.ratings}");
+      return results[best.bestMatchIndex];
+    }
 
-      return results[
-          widget.title.toLowerCase().bestMatch(titles).bestMatchIndex];
+    if (!firstTime) {
+      return bestMatch();
     }
 
     prints("Extractor index BEFORE: $_extractorIndex");
@@ -100,14 +105,11 @@ class _WatchScreenState extends State<WatchScreen>
     for (; _extractorIndex < sources.length; _extractorIndex++) {
       _extractor = sources[_extractorIndex];
 
-      final results = await _extractor.search(widget.title);
+      final best = await bestMatch();
 
-      if (results.isEmpty) {
+      if (best == null) {
         continue;
       }
-
-      final titles = results.map((e) => e.title).toList();
-      final bestMatch = results[widget.title.bestMatch(titles).bestMatchIndex];
 
       if (_extractorIndex >= sources.length - 1) {
         _extractorIndex = 0;
@@ -115,7 +117,7 @@ class _WatchScreenState extends State<WatchScreen>
 
       prints("Extractor index AFTER: $_extractorIndex");
       setState(() {});
-      return bestMatch;
+      return best;
     }
 
     return null;
