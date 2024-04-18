@@ -1,6 +1,8 @@
 import "dart:core";
 import "dart:math";
 
+import "package:luffy/util.dart";
+
 class Unbaser {
   Unbaser(this.base)
       : selector = (base > 62)
@@ -62,8 +64,8 @@ class JsUnpacker {
   static final RegExp unpackReplaceRegex =
       RegExp(r"\\b\\w+\\b", caseSensitive: false, multiLine: true);
 
-  static Iterable<String> unpacking(String scriptBlock) sync* {
-    final unpacked = packedExtractRegex.allMatches(scriptBlock).map((result) {
+  static Iterable<String> unpacking(String scriptBlock) {
+    return packedExtractRegex.allMatches(scriptBlock).mapNotNull((result) {
       final payload = result.group(1);
       final symtab = result.group(4)?.split("|");
       final radix = int.tryParse(result.group(2) ?? "") ?? 10;
@@ -80,16 +82,18 @@ class JsUnpacker {
         return unbased.isEmpty ? word : unbased;
       });
     });
-
-    yield* unpacked.whereType<String>();
   }
 
-  static Iterable<String> unpack(String scriptBlock) sync* {
+  static Iterable<String> unpack(String scriptBlock) {
     if (!detect(scriptBlock)) {
-      return;
+      return [];
     }
 
-    yield* unpacking(scriptBlock);
+    return unpacking(scriptBlock);
+  }
+
+  static List<String> unpackList(List<String> scriptBlock) {
+    return scriptBlock.mapNotNull((it) => it.contains(packedRegex) ? it : null);
   }
 
   static String? unpackAndCombine(String scriptBlock) {

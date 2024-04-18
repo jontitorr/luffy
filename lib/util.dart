@@ -1,5 +1,6 @@
 import "dart:async";
 import "dart:convert";
+import "dart:core";
 import "dart:math";
 
 import "package:color_log/color_log.dart";
@@ -101,13 +102,43 @@ String formatBytes(int bytes, int decimals) {
   return "${(bytes / pow(k, i)).toStringAsFixed(dm)} ${sizes[i]}";
 }
 
+extension ToByte on int {
+  int toByte() {
+    return this & 0xFF;
+  }
+}
+
+extension ToChar on int {
+  String toChar() {
+    return String.fromCharCode(this);
+  }
+}
+
 extension StringExtensions on String {
   String substringAfter(String pattern) {
     return _substringAfterImpl(this, pattern);
   }
 
+  String substringAfterMissing(
+    String delimiter, [
+    String? missingDelimiterValue,
+  ]) {
+    missingDelimiterValue ??= this;
+    final index = indexOf(delimiter);
+    return index >= 0 ? substring(index + 1) : missingDelimiterValue;
+  }
+
   String substringBefore(String pattern) {
     return _substringBeforeImpl(this, pattern);
+  }
+
+  String substringBeforeMissing(
+    String delimiter, [
+    String? missingDelimiterValue,
+  ]) {
+    missingDelimiterValue ??= this;
+    final index = indexOf(delimiter);
+    return index >= 0 ? substring(0, index) : missingDelimiterValue;
   }
 
   String substringBeforeLast(String pattern) {
@@ -118,13 +149,75 @@ extension StringExtensions on String {
     return _substringAfterLastImpl(this, pattern);
   }
 
+  int toInt({
+    int? radix,
+  }) {
+    return int.parse(this, radix: radix);
+  }
+
   String unescapedJson() {
     return _unescapedJsonStringImpl(this);
   }
 }
 
-extension LetExtension<T> on T {
-  R let<R>(R Function(T) block) {
-    return block(this);
+extension LetExtension<T> on T? {
+  R? let<R>(R? Function(T) block) {
+    if (this != null) {
+      return block(this as T);
+    }
+
+    return null;
+  }
+}
+
+extension Chunked on String {
+  List<String> chunked(int chunkSize) {
+    if (isEmpty) {
+      return [];
+    }
+
+    final result = <String>[];
+    var start = 0;
+    while (start < length) {
+      final end = min(start + chunkSize, length);
+      result.add(substring(start, end));
+      start = end;
+    }
+
+    return result;
+  }
+}
+
+extension ToByteArray on Iterable<int> {
+  Uint8List toByteArray() {
+    final bytes = Uint8List(length);
+    var i = 0;
+    for (final value in this) {
+      bytes[i++] = value;
+    }
+    return bytes;
+  }
+}
+
+extension ListFlatMapExtension<T> on Iterable<T> {
+  List<R> flatMap<R>(R Function(T) transform) {
+    final result = <R>[];
+    for (final element in this) {
+      result.addAll(transform(element) as Iterable<R>);
+    }
+    return result;
+  }
+}
+
+extension MapNotNull<T> on Iterable<T> {
+  List<R> mapNotNull<R>(R? Function(T) transform) {
+    final ret = <R>[];
+    for (final element in this) {
+      final transformed = transform(element);
+      if (transformed != null) {
+        ret.add(transformed);
+      }
+    }
+    return ret;
   }
 }
