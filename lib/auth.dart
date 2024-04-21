@@ -53,7 +53,7 @@ class MalToken {
       await _instance.refresh();
     }
 
-    return _instance;
+    return _instance.isValid() ? _instance : null;
   }
 
   Future<void> set({
@@ -130,6 +130,10 @@ class MalToken {
     await _storage.delete(key: "access_token");
     await _storage.delete(key: "expiration_time");
     await _storage.delete(key: "refresh_token");
+    // TODO: Should we purge leftover data or would it be inconvenient?
+    // await _storage.delete(key: "user_info");
+    // await _storage.delete(key: "anime_list");
+    // await _storage.delete(key: "anime_list_unformatted");
     prints("token cleared");
   }
 }
