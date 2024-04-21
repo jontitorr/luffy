@@ -149,7 +149,7 @@ class AnimePaheExtractor extends AnimeExtractor {
       final res = await HttpClient.get(
         "$_baseUrl/api?m=release&id=$session&sort=episode_desc&page=1",
       );
-      return _parseEpisodePages(res, session);
+      return (await _parseEpisodePages(res, session)).reversed.toList();
     } catch (e) {
       prints("Failed to get episodes $e");
       return [];
