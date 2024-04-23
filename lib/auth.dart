@@ -36,17 +36,33 @@ class MalToken {
   static Future<MalToken?> getInstance({
     Map<String, dynamic>? json,
   }) async {
-    final accessToken = json?["access_token"];
-    int? expirationTime;
+    // If we're providing json,we're settings the token.
+    if (json != null) {
+      final accessToken = json["access_token"];
+      int? expirationTime;
 
-    if (json?["expires_in"] != null) {
-      expirationTime = (DateTime.now().millisecondsSinceEpoch +
-          json!["expires_in"] * 1000) as int?;
-    }
+      if (json["expires_in"] != null) {
+        expirationTime = (DateTime.now().millisecondsSinceEpoch +
+            json["expires_in"] * 1000) as int?;
+      }
 
-    if (accessToken != null && expirationTime != null) {
-      _instance.accessToken = accessToken;
-      _instance.expirationTime = expirationTime;
+      if (accessToken != null && expirationTime != null) {
+        await _instance.set(
+          accessToken: accessToken,
+          expirationTime: expirationTime,
+        );
+      }
+    } else {
+      // We're getting the token from storage.
+      final accessToken = await _storage.read(key: "access_token");
+      final expirationTime = await _storage.read(key: "expiration_time");
+
+      if (accessToken != null && expirationTime != null) {
+        _instance = MalToken._(
+          accessToken: accessToken,
+          expirationTime: int.parse(expirationTime),
+        );
+      }
     }
 
     if (!_instance.isValid()) {
