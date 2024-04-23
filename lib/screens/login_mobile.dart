@@ -129,7 +129,21 @@ class _LoginMobileScreenState extends State<LoginMobileScreen> {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          title: const Text("Login"),
+          title: Text(
+            "Log In",
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onPrimary,
+              fontSize: 20,
+            ),
+          ),
+          leading: IconButton(
+            icon: Icon(
+              Icons.close,
+              color: Theme.of(context).colorScheme.onPrimary,
+            ),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          centerTitle: true,
         ),
         body: FutureBuilder<OauthVars>(
           future: _oauthVars,
