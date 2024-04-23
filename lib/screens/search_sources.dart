@@ -2,7 +2,6 @@ import "package:cached_network_image/cached_network_image.dart";
 import "package:collection/collection.dart";
 import "package:flutter/material.dart";
 import "package:luffy/api/anime.dart";
-import "package:luffy/components/drawer.dart";
 import "package:luffy/screens/debounce.dart";
 import "package:luffy/screens/details_sources.dart";
 import "package:luffy/util.dart";
@@ -45,7 +44,6 @@ class _SearchScreenSourcesState extends State<SearchScreenSources>
         appBar: AppBar(
           title: const Text("Search Sources"),
         ),
-        drawer: const CustomDrawer(),
         body: Container(
           height: MediaQuery.of(context).size.height,
           padding: const EdgeInsets.all(16),

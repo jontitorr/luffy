@@ -2,7 +2,6 @@ import "package:custom_refresh_indicator/custom_refresh_indicator.dart";
 import "package:flutter/material.dart";
 import "package:luffy/api/mal.dart";
 import "package:luffy/components/anime_info.dart";
-import "package:luffy/components/loading.dart";
 import "package:luffy/screens/details.dart";
 
 class _Data {
@@ -65,7 +64,9 @@ class _ListScreenState extends State<ListScreen>
       future: _dataFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const LoadingIndicator();
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
         }
 
         final data = snapshot.data;
@@ -77,7 +78,6 @@ class _ListScreenState extends State<ListScreen>
         }
 
         final animeList = data.animeList;
-        final userInfo = data.userInfo;
 
         return SafeArea(
           child: DefaultTabController(
@@ -85,12 +85,8 @@ class _ListScreenState extends State<ListScreen>
             child: Scaffold(
               appBar: AppBar(
                 iconTheme: Theme.of(context).iconTheme,
-                title: Text(
+                title: const Text(
                   "My Lists",
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w500,
-                      ),
                 ),
                 bottom: TabBar(
                   tabAlignment: TabAlignment.center,
@@ -113,7 +109,9 @@ class _ListScreenState extends State<ListScreen>
                       }
                     })();
 
-                    return Tab(text: "$name (${toDisplay.length})");
+                    return Tab(
+                      text: "${name.toUpperCase()} (${toDisplay.length})",
+                    );
                   }).toList(),
                 ),
               ),

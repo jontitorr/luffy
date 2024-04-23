@@ -405,8 +405,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       prints("VideoPlayer source changed to ${sources.first.videoUrl}");
 
       await _player.open(
-        Media(
-          sources.first.videoUrl,
+        Playlist(
+          sources
+              .mapNotNull((it) => Media(it.videoUrl, httpHeaders: it.headers)),
         ),
       );
     });

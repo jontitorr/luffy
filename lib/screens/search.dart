@@ -1,7 +1,6 @@
 import "package:flutter/material.dart";
 import "package:luffy/api/anilist.dart";
 import "package:luffy/components/anime_card.dart";
-import "package:luffy/components/drawer.dart";
 import "package:luffy/screens/debounce.dart";
 
 class SearchScreen extends StatefulWidget {
@@ -25,7 +24,6 @@ class _SearchScreenState extends State<SearchScreen>
         appBar: AppBar(
           title: const Text("Search"),
         ),
-        drawer: const CustomDrawer(),
         body: Container(
           padding: const EdgeInsets.all(8),
           child: Column(

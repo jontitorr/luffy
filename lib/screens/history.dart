@@ -3,7 +3,6 @@ import "package:custom_refresh_indicator/custom_refresh_indicator.dart";
 import "package:flutter/material.dart";
 import "package:luffy/api/anime.dart";
 import "package:luffy/api/history.dart";
-import "package:luffy/components/drawer.dart";
 import "package:luffy/screens/details_sources.dart";
 
 class _Data {
@@ -74,9 +73,10 @@ class _HomeScreenInnerState extends State<HomeScreenInner>
 
         return SafeArea(
           child: Scaffold(
-            drawer: const CustomDrawer(),
             appBar: AppBar(
-              title: const Text("History"),
+              title: const Text(
+                "History",
+              ),
             ),
             body: CustomRefreshIndicator(
               builder: MaterialIndicatorDelegate(
