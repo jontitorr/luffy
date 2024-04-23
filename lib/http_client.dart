@@ -175,6 +175,7 @@ class HttpClient {
     Map<String, String>? headers,
     Options? options,
     bool followRedirects = true,
+    bool useNewClient = false,
   }) async {
     return _request(
       url,
@@ -182,6 +183,7 @@ class HttpClient {
       headers: headers,
       options: options,
       followRedirects: followRedirects,
+      useNewClient: useNewClient,
     );
   }
 

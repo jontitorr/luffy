@@ -10,7 +10,7 @@ const _baseUrl = "https://animepahe.com";
 
 Future<String?> _getSession(String title, int animeId) async {
   try {
-    return (await HttpClient.get("$_baseUrl/api?m=search&q=$title"))
+    return (await DdosGuardInterceptor.get("$_baseUrl/api?m=search&q=$title"))
         .data["data"]
         ?.firstWhere(
           (e) => e["id"] == animeId,

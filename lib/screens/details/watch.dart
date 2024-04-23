@@ -90,7 +90,7 @@ class _WatchScreenState extends State<WatchScreen>
       }
 
       final titles = results.map((e) => e.title).toList();
-      prints("Matching $widget.title against: $titles");
+      prints("Matching ${widget.title} against: $titles");
       final best = widget.title.bestMatch(titles);
       prints("Ratings: ${best.ratings}");
       return results[best.bestMatchIndex];
