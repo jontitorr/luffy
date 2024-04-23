@@ -8,6 +8,7 @@ import "package:luffy/api/anime.dart";
 import "package:luffy/api/extractors/filemoon.dart";
 import "package:luffy/api/extractors/mp4upload.dart";
 import "package:luffy/api/extractors/streamtape.dart";
+import "package:luffy/http_client.dart";
 import "package:luffy/util.dart";
 
 const _baseUrl = "https://aniwave.to";
@@ -140,8 +141,8 @@ class NineAnimeExtractor extends AnimeExtractor implements AnimeParser {
 
   @override
   Future<List<Episode>> getEpisodes(Anime anime) async {
-    var res = await http.get(Uri.parse(_baseUrl + anime.url));
-    final document = parse(res.body);
+    var res = await HttpClient.get(_baseUrl + anime.url);
+    final document = parse(res.data);
     final id = document.querySelector("div[data-id]")?.attributes["data-id"];
 
     if (id == null) {
@@ -150,10 +151,19 @@ class NineAnimeExtractor extends AnimeExtractor implements AnimeParser {
 
     final encrypt = vrfEncrypt(id);
     final vrf = "vrf=${Uri.encodeComponent(encrypt)}";
-    res = await http.get(
-      Uri.parse("$_baseUrl/ajax/episode/list/$id?$vrf"),
+    res = await HttpClient.get(
+      "$_baseUrl/ajax/episode/list/$id?$vrf",
+      headers: {
+        "Accept": "application/json, text/javascript, */*; q=0.01",
+        "Referer": _baseUrl + anime.url,
+        "X-Requested-With": "XMLHttpRequest",
+      },
     );
-    final html = jsonDecode(res.body)["result"];
+    final html = res.data["result"];
+
+    if (html == null) {
+      return [];
+    }
 
     return parse(html)
         .querySelectorAll(episodeSelector)

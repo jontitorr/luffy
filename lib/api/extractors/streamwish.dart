@@ -21,7 +21,7 @@ Future<List<VideoSource>> streamWishExtractor(String url, String prefix) async {
       return [];
     }
 
-    final String masterUrl = jsEval.first
+    final masterUrl = jsEval.firstOrNull
         .let(
           (script) {
             if (script.contains("function(p,a,c")) {
@@ -30,11 +30,11 @@ Future<List<VideoSource>> streamWishExtractor(String url, String prefix) async {
             return script;
           },
         )
-        .substringAfter("source")
+        ?.substringAfter("source")
         .substringAfter('file:"')
         .substringBefore('"');
 
-    if (masterUrl.isEmpty) {
+    if (masterUrl == null || masterUrl.isEmpty) {
       return [];
     }
 

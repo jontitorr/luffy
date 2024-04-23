@@ -1,9 +1,11 @@
 import "dart:convert";
 
+import "package:dio/dio.dart";
 import "package:encrypt/encrypt.dart";
 import "package:html/parser.dart";
 import "package:http/http.dart" as http;
 import "package:luffy/api/anime.dart";
+import "package:luffy/http_client.dart";
 import "package:luffy/util.dart";
 
 (Encrypter, IV) _encrypt(String keyy, String ivv) {
@@ -33,8 +35,13 @@ String cryptoHandler(
 }
 
 Future<List<VideoSource>> gogoCdnExtractor(String url) async {
-  final res = await http.get(Uri.parse(url));
-  final document = parse(res.body);
+  final res = await HttpClient.get(
+    url,
+    options: Options(
+      receiveTimeout: const Duration(seconds: 10),
+    ),
+  );
+  final document = parse(res.data);
   final iv = document
       .querySelector("div.wrapper")!
       .attributes["class"]!
@@ -45,11 +52,11 @@ Future<List<VideoSource>> gogoCdnExtractor(String url) async {
       .attributes["class"]!
       .split("container-")
       .last;
-  RegExp(r"container-(\d+)").firstMatch(res.body)?.group(1);
+  RegExp(r"container-(\d+)").firstMatch(res.data)?.group(1);
   final decryptionKey =
-      RegExp(r"videocontent-(\d+)").firstMatch(res.body)?.group(1);
+      RegExp(r"videocontent-(\d+)").firstMatch(res.data)?.group(1);
   final encryptAjaxParams = cryptoHandler(
-    RegExp(r'data-value="([^"]+)').firstMatch(res.body)?.group(1) ?? "",
+    RegExp(r'data-value="([^"]+)').firstMatch(res.data)?.group(1) ?? "",
     iv,
     secretKey,
     false,

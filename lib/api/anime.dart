@@ -1,4 +1,5 @@
 import "package:html/dom.dart";
+import "package:luffy/api/sources/allanime.dart";
 import "package:luffy/api/sources/animeflix.dart";
 import "package:luffy/api/sources/animepahe.dart";
 import "package:luffy/api/sources/gogoanime.dart";
@@ -122,6 +123,7 @@ abstract class AnimeParser {
 }
 
 final sources = [
+  AllAnimeExtractor(),
   AnimeFlixExtractor(),
   AnimePaheExtractor(),
   GogoAnimeExtractor(),
