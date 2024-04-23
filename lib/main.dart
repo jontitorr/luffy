@@ -6,6 +6,7 @@ import "package:flutter/services.dart";
 import "package:flutter_displaymode/flutter_displaymode.dart";
 import "package:luffy/api/user_settings.dart";
 import "package:luffy/auth.dart";
+import "package:luffy/components/loading.dart";
 import "package:luffy/screens/home.dart";
 import "package:luffy/screens/login.dart";
 import "package:luffy/screens/welcome.dart";
@@ -118,26 +119,31 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    final settings = _settings;
+    return FutureBuilder(
+      future: Future.wait([MalToken.getInstance(), UserSettings.getInstance()]),
+      builder: (context, snapshot) {
+        // If still waiting show loading indicator.
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const LoadingIndicator();
+        }
 
-    if (settings == null) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
-    }
+        final token = snapshot.data![0] as MalToken?;
+        final settings = snapshot.data![1]! as UserSettings;
 
-    return MaterialApp(
-      title: "Luffy",
-      theme: lightTheme(primaryColor: settings.lightThemeColor),
-      darkTheme: darkTheme(primaryColor: settings.darkThemeColor),
-      home: settings.welcomeScreenShown
-          ? const HomeScreen()
-          : const WelcomeScreen(),
-      debugShowCheckedModeBanner: false,
-      scrollBehavior: CustomScrollBehavior(),
-      routes: {
-        "/home": (context) => const HomeScreen(),
-        "/login": (context) => const LoginScreen(),
+        return MaterialApp(
+          title: "Luffy",
+          theme: lightTheme(primaryColor: settings.lightThemeColor),
+          darkTheme: darkTheme(primaryColor: settings.darkThemeColor),
+          home: settings.welcomeScreenShown && token != null
+              ? const HomeScreen()
+              : const WelcomeScreen(),
+          debugShowCheckedModeBanner: false,
+          scrollBehavior: CustomScrollBehavior(),
+          routes: {
+            "/home": (context) => const HomeScreen(),
+            "/login": (context) => const LoginScreen(),
+          },
+        );
       },
     );
   }

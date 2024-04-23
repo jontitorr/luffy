@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_svg/flutter_svg.dart";
+import "package:luffy/api/user_settings.dart";
 import "package:luffy/components/loading.dart";
 import "package:luffy/components/logo.dart";
 import "package:luffy/screens/home.dart";
@@ -18,6 +19,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   @override
   void dispose() {
     SystemChrome.setPreferredOrientations([]);
+    UserSettings.setWelcomeScreenShown(true);
     super.dispose();
   }
 
