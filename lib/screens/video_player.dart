@@ -220,7 +220,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         id: widget.showId,
         animeId: widget.animeId,
         title: widget.showTitle,
-        imageUrl: currentEpisode.thumbnailUrl ?? "",
+        imageUrl: currentEpisode.thumbnailUrl ?? widget.imageUrl,
         progress: {},
         totalEpisodes: widget.episodes.length,
         sources: {

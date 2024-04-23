@@ -761,7 +761,7 @@ class _ControlsOverlayState extends State<ControlsOverlay> {
       );
     }
 
-    FlutterVolumeController.updateShowSystemUI(true);
+    FlutterVolumeController.updateShowSystemUI(false);
 
     ScreenBrightness().current.then(
           (value) => setState(() {
