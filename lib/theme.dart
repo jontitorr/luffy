@@ -8,9 +8,9 @@ ThemeData lightTheme({
     appBarTheme: const AppBarTheme(
       systemOverlayStyle: SystemUiOverlayStyle.dark,
       titleTextStyle: TextStyle(
-        color: Colors.white,
-        fontSize: 18,
-        fontWeight: FontWeight.w600,
+        color: Colors.black,
+        fontSize: 20,
+        fontWeight: FontWeight.w500,
       ),
       iconTheme: IconThemeData(
         color: Colors.white,
@@ -49,6 +49,7 @@ ThemeData lightTheme({
     tabBarTheme: TabBarTheme(
       indicatorColor: primaryColor,
       labelColor: const Color.fromARGB(255, 28, 28, 30),
+      unselectedLabelColor: const Color.fromARGB(255, 28, 28, 30),
     ),
     // textTheme: const TextTheme(
     //   bodySmall: TextStyle(),
@@ -71,12 +72,12 @@ ThemeData darkTheme({
   required Color primaryColor,
 }) {
   return ThemeData(
-    appBarTheme: AppBarTheme(
+    appBarTheme: const AppBarTheme(
       systemOverlayStyle: SystemUiOverlayStyle.light,
       titleTextStyle: TextStyle(
-        color: primaryColor,
-        fontSize: 18,
-        fontWeight: FontWeight.w600,
+        color: Colors.white,
+        fontSize: 20,
+        fontWeight: FontWeight.w500,
       ),
     ),
     canvasColor: const Color.fromARGB(255, 1, 1, 1),
@@ -108,6 +109,7 @@ ThemeData darkTheme({
     tabBarTheme: TabBarTheme(
       indicatorColor: primaryColor,
       labelColor: const Color.fromARGB(255, 229, 229, 231),
+      unselectedLabelColor: Colors.white54,
     ),
   );
 }
