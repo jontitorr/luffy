@@ -36,24 +36,30 @@ class UserSettings {
   bool welcomeScreenShown;
 
   static Future<UserSettings> getInstance() async {
-    if (_instance == null) {
-      final settings = tryJsonDecode(await _storage.read(key: "settings"));
+    try {
+      if (_instance == null) {
+        final settings = tryJsonDecode(await _storage.read(key: "settings"));
 
-      _instance = UserSettings._(
-        settings ?? _defaultSettings(),
-      );
-
-      prints("Settings: $_instance");
-
-      if (settings == null) {
-        await _storage.write(
-          key: "settings",
-          value: jsonEncode(_instance!.toJson()),
+        _instance = UserSettings._(
+          settings ?? _defaultSettings(),
         );
-      }
-    }
 
-    return _instance!;
+        prints("Settings: ${_instance?.toJson()}");
+
+        if (settings == null) {
+          await _storage.write(
+            key: "settings",
+            value: jsonEncode(_instance!.toJson()),
+          );
+        }
+      }
+
+      return _instance!;
+    } catch (e) {
+      return UserSettings._(
+        _defaultSettings(),
+      );
+    }
   }
 
   static Future<void> registerListener(
