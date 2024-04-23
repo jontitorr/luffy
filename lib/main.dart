@@ -14,6 +14,7 @@ import "package:luffy/scroll_behavior.dart";
 import "package:luffy/theme.dart";
 import "package:luffy/util.dart";
 import "package:media_kit/media_kit.dart";
+import "package:responsive_framework/responsive_framework.dart";
 import "package:window_manager/window_manager.dart";
 
 Future main() async {
@@ -143,6 +144,15 @@ class _MyAppState extends State<MyApp> {
             "/home": (context) => const HomeScreen(),
             "/login": (context) => const LoginScreen(),
           },
+          builder: (context, child) => ResponsiveBreakpoints.builder(
+            child: child!,
+            breakpoints: [
+              const Breakpoint(start: 0, end: 450, name: MOBILE),
+              const Breakpoint(start: 451, end: 800, name: TABLET),
+              const Breakpoint(start: 801, end: 1920, name: DESKTOP),
+              const Breakpoint(start: 1921, end: double.infinity, name: "4K"),
+            ],
+          ),
         );
       },
     );

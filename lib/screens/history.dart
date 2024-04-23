@@ -1,9 +1,10 @@
-import "package:cached_network_image/cached_network_image.dart";
 import "package:custom_refresh_indicator/custom_refresh_indicator.dart";
 import "package:flutter/material.dart";
 import "package:luffy/api/anime.dart";
 import "package:luffy/api/history.dart";
 import "package:luffy/screens/details_sources.dart";
+import "package:luffy/screens/history_card.dart";
+import "package:responsive_framework/responsive_framework.dart";
 
 class _Data {
   _Data({
@@ -119,12 +120,17 @@ class _HomeScreenInnerState extends State<HomeScreenInner>
                   }();
                 });
               },
-              child: Container(
+              child: GridView.count(
+                crossAxisCount:
+                    ResponsiveBreakpoints.of(context).isMobile ? 2 : 4,
+                childAspectRatio:
+                    ResponsiveBreakpoints.of(context).isMobile ? 1.4 : 1.2,
                 padding: const EdgeInsets.all(16),
-                color: Colors.blueGrey.withOpacity(0.3),
-                child: ListView.separated(
-                  itemCount: history.length,
-                  itemBuilder: (ctx, idx) {
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+                children: List.generate(
+                  history.length,
+                  (idx) {
                     final e = history[idx];
                     final sourceName = e.id.split("-").elementAt(0);
                     final extractor = sources.firstWhere(
@@ -151,46 +157,10 @@ class _HomeScreenInnerState extends State<HomeScreenInner>
                           ),
                         );
                       },
-                      child: SizedBox(
-                        height: 200,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Container(
-                            color: Theme.of(context).colorScheme.surface,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Flexible(
-                                  child: SizedBox.expand(
-                                    child: CachedNetworkImage(
-                                      imageUrl: e.imageUrl ??
-                                          "https://via.placeholder.com/150",
-                                      fit: BoxFit.cover,
-                                      errorWidget: (context, url, error) =>
-                                          Container(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .surface,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(
-                                  width: 8,
-                                ),
-                                Flexible(
-                                  flex: 2,
-                                  child: Center(child: Text(e.title)),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                      child: HistoryCard(
+                        entry: e,
                       ),
                     );
-                  },
-                  separatorBuilder: (context, idx) {
-                    return const SizedBox(height: 8);
                   },
                 ),
               ),

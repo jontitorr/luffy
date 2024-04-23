@@ -6,6 +6,7 @@ import "package:luffy/components/loading.dart";
 import "package:luffy/components/logo.dart";
 import "package:luffy/screens/home.dart";
 import "package:luffy/screens/login.dart";
+import "package:responsive_framework/responsive_framework.dart";
 import "package:url_launcher/url_launcher.dart";
 
 class WelcomeScreen extends StatefulWidget {
@@ -32,17 +33,15 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
 
     final isPortrait =
-        MediaQuery.of(context).orientation == Orientation.portrait;
-    final isSmall = MediaQuery.of(context).size.height < 1500;
+        ResponsiveBreakpoints.of(context).orientation == Orientation.portrait;
+    final isSmall = ResponsiveBreakpoints.of(context).isMobile;
 
-    Future<void> fut;
+    var fut = Future.value();
 
     if (isSmall) {
       fut = SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp,
       ]);
-    } else {
-      fut = Future.value();
     }
 
     return FutureBuilder(
@@ -101,17 +100,23 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     if (!isPortrait || (isPortrait && isSmall))
                       Positioned.fill(
                         top: MediaQuery.of(context).size.height /
-                            (!isSmall ? 1.9 : 1.7),
+                            (!isSmall
+                                ? 1.9
+                                : isPortrait
+                                    ? 1.7
+                                    : 2),
                         child: const Column(
                           children: [
-                            Expanded(child: Logo()),
+                            Flexible(flex: 3, child: Logo()),
                             SizedBox(height: 16),
-                            Text(
-                              "All your favorite anime. All in one place.",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
+                            Flexible(
+                              child: Text(
+                                "All your favorite anime. All in one place.",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                ),
                               ),
                             ),
                           ],
