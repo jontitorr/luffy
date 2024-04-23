@@ -1,9 +1,10 @@
 import "package:flutter/material.dart";
-import "package:luffy/screens/discover.dart";
+import "package:luffy/screens/browse.dart";
 import "package:luffy/screens/history.dart";
 import "package:luffy/screens/list.dart";
 import "package:luffy/screens/search.dart";
 import "package:luffy/screens/search_sources.dart";
+import "package:luffy/screens/settings.dart";
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,9 +21,10 @@ class _HomeScreenState extends State<HomeScreen>
   final List<Widget> _tabs = [
     const ListScreen(),
     const HomeScreenInner(),
-    const DiscoverScreen(),
+    const BrowseScreen(),
     const SearchScreen(),
     const SearchScreenSources(),
+    const SettingsScreen(),
   ];
 
   void _handleTabChange() {
@@ -64,8 +66,10 @@ class _HomeScreenState extends State<HomeScreen>
         type: BottomNavigationBarType.fixed,
         backgroundColor: Theme.of(context).colorScheme.surface,
         currentIndex: _currentIndex,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
+        showSelectedLabels: true,
+        showUnselectedLabels: true,
+        selectedFontSize: 10,
+        unselectedFontSize: 10,
         onTap: (index) {
           setState(() {
             _currentIndex = index;
@@ -75,16 +79,16 @@ class _HomeScreenState extends State<HomeScreen>
         },
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.list),
-            label: "List",
+            icon: Icon(Icons.bookmark_border),
+            label: "My Lists",
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.history),
             label: "History",
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.explore),
-            label: "Discover",
+            icon: Icon(Icons.grid_view),
+            label: "Browse",
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.search),
@@ -93,6 +97,15 @@ class _HomeScreenState extends State<HomeScreen>
           BottomNavigationBarItem(
             icon: Icon(Icons.tv),
             label: "Search All",
+          ),
+          BottomNavigationBarItem(
+            icon: CircleAvatar(
+              backgroundImage: NetworkImage(
+                "https://avatars.githubusercontent.com/u/59069386?v=4",
+              ),
+              radius: 12,
+            ),
+            label: "Account",
           ),
         ],
       ),

@@ -1,6 +1,7 @@
 import "dart:convert";
 
 import "package:http/http.dart" as http;
+import "package:luffy/http_client.dart";
 import "package:luffy/util.dart";
 
 DateTime? _parseDateObj(Map<String, dynamic> json) {
@@ -144,23 +145,6 @@ class Studio {
   final String siteUrl;
 }
 
-class Tag {
-  Tag({
-    required this.name,
-    required this.rank,
-    required this.isMediaSpoiler,
-  });
-
-  Tag.fromJson(Map<String, dynamic> json)
-      : name = json["name"],
-        rank = json["rank"],
-        isMediaSpoiler = json["isMediaSpoiler"];
-
-  final String name;
-  final int rank;
-  final bool isMediaSpoiler;
-}
-
 class Character {
   Character({
     required this.role,
@@ -194,7 +178,6 @@ class Relation extends SearchResult {
     required super.type,
     required super.genres,
     required super.meanScore,
-    required super.isFavorite,
     required super.format,
     required super.bannerImage,
     required super.coverImage,
@@ -222,7 +205,6 @@ class SearchResult {
     required this.type,
     required this.genres,
     required this.meanScore,
-    required this.isFavorite,
     required this.format,
     required this.bannerImage,
     required this.coverImage,
@@ -245,7 +227,6 @@ class SearchResult {
         meanScore = json["meanScore"] != null
             ? json["meanScore"].toDouble() / 10
             : null,
-        isFavorite = json["isFavourite"],
         format = json["format"],
         bannerImage = json["bannerImage"],
         coverImage = json["coverImage"]["large"],
@@ -263,7 +244,6 @@ class SearchResult {
   final String type;
   final List<String> genres;
   final double? meanScore;
-  final bool isFavorite;
   final String? format;
   final String? bannerImage;
   final String coverImage;
@@ -308,6 +288,62 @@ class WeeklySearchResult {
   final SearchResult media;
 }
 
+class BrowseResult {
+  BrowseResult.fromJson(Map<String, dynamic> json)
+      : trending = json["trending"]["media"]
+            .map<SearchResult>((json) => SearchResult.fromJson(json))
+            .toList(),
+        season = json["season"]["media"]
+            .map<SearchResult>((json) => SearchResult.fromJson(json))
+            .toList(),
+        nextSeason = json["nextSeason"]["media"]
+            .map<SearchResult>((json) => SearchResult.fromJson(json))
+            .toList(),
+        popular = json["popular"]["media"]
+            .map<SearchResult>((json) => SearchResult.fromJson(json))
+            .toList(),
+        top = json["top"]["media"]
+            .map<SearchResult>((json) => SearchResult.fromJson(json))
+            .toList();
+
+  final List<SearchResult> trending;
+  final List<SearchResult> season;
+  final List<SearchResult> nextSeason;
+  final List<SearchResult> popular;
+  final List<SearchResult> top;
+}
+
+class Tag {
+  Tag({
+    required this.name,
+    required this.rank,
+    required this.isMediaSpoiler,
+  });
+
+  Tag.fromJson(Map<String, dynamic> json)
+      : name = json["name"],
+        rank = json["rank"],
+        isMediaSpoiler = json["isMediaSpoiler"];
+
+  final String name;
+  final int rank;
+  final bool isMediaSpoiler;
+}
+
+class GenresAndTags {
+  GenresAndTags({
+    required this.genres,
+    required this.tags,
+  });
+
+  GenresAndTags.fromJson(Map<String, dynamic> json)
+      : genres = json["genres"],
+        tags = json["tags"].map<Tag>((json) => Tag.fromJson(json)).toList();
+
+  final List<String> genres;
+  final List<String> tags;
+}
+
 class AnilistService {
   static Future<List<SearchResult>> search(String query) async {
     final params = {
@@ -340,6 +376,7 @@ class AnilistService {
 
       return ret;
     } catch (e) {
+      prints("Failed to get anime info: $e");
       return [];
     }
   }
@@ -351,6 +388,25 @@ class AnilistService {
     final params = {
       "query":
           "{Media(${isMalId ? "idMal" : "id"}:$id){id mediaListEntry{id status score(format:POINT_100)progress private notes repeat customLists updatedAt startedAt{year month day}completedAt{year month day}}isFavourite siteUrl idMal nextAiringEpisode{episode airingAt}source countryOfOrigin format duration season seasonYear startDate{year month day}endDate{year month day}genres studios(isMain:true){nodes{id name siteUrl}}description trailer{site id}synonyms tags{name rank isMediaSpoiler}characters(sort:[ROLE,FAVOURITES_DESC],perPage:25,page:1){edges{role node{id image{medium}name{userPreferred}}}}relations{edges{relationType(version:2)node{id idMal mediaListEntry{progress private score(format:POINT_100)status}episodes chapters nextAiringEpisode{episode}popularity meanScore isAdult isFavourite format title{english romaji userPreferred}type status(version:2)bannerImage coverImage{large}}}}staffPreview:staff(perPage:8,sort:[RELEVANCE,ID]){edges{role node{id name{userPreferred}}}}recommendations(sort:RATING_DESC){nodes{mediaRecommendation{id idMal mediaListEntry{progress private score(format:POINT_100)status}episodes chapters nextAiringEpisode{episode}meanScore isAdult isFavourite format title{english romaji userPreferred}type status(version:2)bannerImage coverImage{large}}}}externalLinks{url site}}}",
+    };
+
+    final res = await http.post(
+      Uri.parse("https://graphql.anilist.co"),
+      body: params,
+    );
+
+    return AnimeInfo.fromJson(
+      jsonDecode(res.body)["data"]["Media"],
+    );
+  }
+
+  static Future<AnimeInfo?> getAnime(
+    int page, {
+    bool isMalId = false,
+  }) async {
+    final params = {
+      "query":
+          "{Page(page:$page,perPage:1){pageInfo{total perPage currentPage lastPage hasNextPage}media(type:ANIME,isAdult:false){title{romaji english native userPreferred}coverImage{large}description genres siteUrl bannerImage}}}",
     };
 
     final res = await http.post(
@@ -470,7 +526,6 @@ class AnilistService {
     Map<String, dynamic> makeParams(int page) => {
           "query":
               "{Page(page:$page,perPage:50){pageInfo{hasNextPage total}airingSchedules(airingAt_greater:$now airingAt_lesser:$future sort:TIME_DESC){episode airingAt media{id idMal status chapters episodes nextAiringEpisode{episode}isAdult type meanScore isFavourite format bannerImage countryOfOrigin coverImage{large}title{english romaji userPreferred}mediaListEntry{progress private score(format:POINT_100)status}}}}}",
-          "variables": "",
         };
 
     final ret = <WeeklySearchResult>[];
@@ -529,5 +584,47 @@ class AnilistService {
     ret.sort((a, b) => a.airingAt.compareTo(b.airingAt));
 
     return ret;
+  }
+
+  static Future<BrowseResult?> browse() async {
+    final now = DateTime.now();
+    final seasons = ["WINTER", "SPRING", "SUMMER", "FALL"];
+    final month = now.month;
+    final seasonIndex = (month ~/ 3) % 4;
+    final season = seasons[seasonIndex];
+
+    // Calculate next season/year. For example, we increment a year if we're in the last season of the year.
+    final nextSeasonIndex = (seasonIndex + 1) % 4;
+    final nextYear = now.year + ((seasonIndex + 1) ~/ 4);
+    final nextSeason = seasons[nextSeasonIndex];
+    final nextSeasonYear = nextSeasonIndex == 0 ? nextYear + 1 : nextYear;
+
+    final params = {
+      "query":
+          r"query($season:MediaSeason,$seasonYear:Int $nextSeason:MediaSeason,$nextYear:Int){trending:Page(page:1,perPage:6){media(sort:TRENDING_DESC,type:ANIME,isAdult:false){...media}}season:Page(page:1,perPage:6){media(season:$season,seasonYear:$seasonYear,sort:POPULARITY_DESC,type:ANIME,isAdult:false){...media}}nextSeason:Page(page:1,perPage:6){media(season:$nextSeason,seasonYear:$nextYear,sort:POPULARITY_DESC,type:ANIME,isAdult:false){...media}}popular:Page(page:1,perPage:6){media(sort:POPULARITY_DESC,type:ANIME,isAdult:false){...media}}top:Page(page:1,perPage:10){media(sort:SCORE_DESC,type:ANIME,isAdult:false){...media}}}fragment media on Media{id idMal title{english romaji userPreferred}coverImage{extraLarge large color}startDate{year month day}endDate{year month day}bannerImage season seasonYear description type format status(version:2)episodes duration chapters volumes genres meanScore isAdult averageScore popularity mediaListEntry{id status}nextAiringEpisode{airingAt timeUntilAiring episode}studios(isMain:true){edges{isMain node{id name}}}}",
+      "variables": {
+        "season": season,
+        "seasonYear": now.year,
+        "nextSeason": nextSeason,
+        "nextYear": nextSeasonYear,
+      },
+    };
+
+    return HttpClient.post(
+      "https://graphql.anilist.co",
+      data: params,
+    ).then((res) => BrowseResult.fromJson(res.data["data"]));
+  }
+
+  static Future<GenresAndTags?> genresAndTags() async {
+    final params = {
+      "query":
+          r"query{genres:GenreCollection tags:MediaTagCollection{name description category isAdult}}",
+    };
+
+    return HttpClient.post(
+      "https://graphql.anilist.co",
+      data: params,
+    ).then((res) => GenresAndTags.fromJson(res.data["data"]));
   }
 }

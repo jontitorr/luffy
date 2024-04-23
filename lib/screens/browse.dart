@@ -4,51 +4,30 @@ import "package:collection/collection.dart";
 import "package:flutter/material.dart";
 import "package:luffy/api/anilist.dart";
 import "package:luffy/components/anime_card.dart";
-import "package:luffy/components/drawer.dart";
 import "package:luffy/components/parallax_container.dart";
 import "package:luffy/screens/details.dart";
 import "package:luffy/screens/details/calen.dart";
 
-class _Data {
-  _Data({
-    required this.discover,
-    required this.recent,
-    required this.popular,
-  });
-
-  final List<SearchResult> discover;
-  final List<SearchResult> recent;
-  final List<SearchResult> popular;
-}
-
-class DiscoverScreen extends StatefulWidget {
-  const DiscoverScreen({super.key});
+class BrowseScreen extends StatefulWidget {
+  const BrowseScreen({super.key});
 
   @override
-  State<DiscoverScreen> createState() => _DiscoverScreenState();
+  State<BrowseScreen> createState() => _BrowseScreenState();
 }
 
-class _DiscoverScreenState extends State<DiscoverScreen>
+class _BrowseScreenState extends State<BrowseScreen>
     with AutomaticKeepAliveClientMixin {
-  late Future<_Data?> _animesFuture;
+  late Future<BrowseResult?> _animesFuture;
   final ScrollController _scrollController = ScrollController();
   bool _showScrollToTop = false;
   String? _backgroundImage =
       "https://s4.anilist.co/file/anilistcdn/media/anime/banner/147103-MwFq1R7jphZT.jpg";
 
-  Future<_Data?> _getData() async {
-    return _Data(
-      discover: await AnilistService.discover(),
-      recent: await AnilistService.recentlyUpdated(),
-      popular: await AnilistService.popular(),
-    );
-  }
-
   @override
   void initState() {
     super.initState();
 
-    _animesFuture = _getData();
+    _animesFuture = AnilistService.browse();
 
     _scrollController.addListener(() {
       final double showoffset = MediaQuery.of(context).size.height;
@@ -65,7 +44,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          title: const Text("Discover"),
+          title: const Text("Browse"),
         ),
         floatingActionButton: AnimatedOpacity(
           duration: const Duration(milliseconds: 200),
@@ -82,7 +61,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             child: const Icon(Icons.arrow_upward),
           ),
         ),
-        drawer: const CustomDrawer(),
         body: FutureBuilder(
           future: _animesFuture,
           builder: (context, snapshot) {
@@ -120,11 +98,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             onPageChanged: (idx, _) {
                               setState(() {
                                 _backgroundImage =
-                                    topAnimes.discover[idx].bannerImage;
+                                    topAnimes.trending[idx].bannerImage;
                               });
                             },
                           ),
-                          items: topAnimes.discover.map((anime) {
+                          items: topAnimes.trending.map((anime) {
                             return Builder(
                               builder: (context) {
                                 return GestureDetector(
@@ -157,9 +135,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                           const SizedBox(
                                             height: 8,
                                           ),
-                                          Text(
-                                            "${anime.episodes} episodes",
-                                          ),
+                                          if (anime.episodes != null)
+                                            Text(
+                                              "${anime.episodes} episodes",
+                                            ),
                                         ],
                                       ),
                                       const SizedBox(
@@ -238,10 +217,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         height: 220,
                         child: ListView.separated(
                           scrollDirection: Axis.horizontal,
-                          itemCount: topAnimes.recent.length,
+                          itemCount: topAnimes.season.length,
                           padding: const EdgeInsets.all(8),
                           itemBuilder: (context, idx) {
-                            final anime = topAnimes.recent[idx];
+                            final anime = topAnimes.season[idx];
 
                             return SizedBox(
                               width: 120,

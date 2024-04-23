@@ -389,7 +389,7 @@ class _InfoScreenState extends State<InfoScreen> {
               const SizedBox(height: 8),
               YouTubeEmbed(url: animeInfo!.anime!.trailer!),
             ],
-            _makeGenres(animeInfo!.anime),
+            _makeGenres(animeInfo?.anime),
             ..._makeCharacters(animeInfo),
             ..._makeRelations(animeInfo),
             ..._makeRecommendations(animeInfo),
