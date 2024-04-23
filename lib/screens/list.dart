@@ -1,9 +1,8 @@
-import "package:cached_network_image/cached_network_image.dart";
 import "package:custom_refresh_indicator/custom_refresh_indicator.dart";
 import "package:flutter/material.dart";
 import "package:luffy/api/mal.dart";
 import "package:luffy/components/anime_info.dart";
-import "package:luffy/components/drawer.dart";
+import "package:luffy/components/loading.dart";
 import "package:luffy/screens/details.dart";
 
 class _Data {
@@ -66,9 +65,7 @@ class _ListScreenState extends State<ListScreen>
       future: _dataFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
+          return const LoadingIndicator();
         }
 
         final data = snapshot.data;
@@ -88,28 +85,15 @@ class _ListScreenState extends State<ListScreen>
             child: Scaffold(
               appBar: AppBar(
                 iconTheme: Theme.of(context).iconTheme,
-                title: Row(
-                  children: [
-                    CachedNetworkImage(
-                      imageUrl: userInfo?.picture ??
-                          "https://via.placeholder.com/150",
-                      width: 40,
-                      height: 40,
-                      fit: BoxFit.cover,
-                      errorWidget: (context, url, error) =>
-                          const Icon(Icons.error),
-                    ),
-                    const SizedBox(
-                      width: 8,
-                    ),
-                    if (userInfo != null)
-                      Text(
-                        " (${userInfo.name})",
-                        style: Theme.of(context).textTheme.titleSmall,
+                title: Text(
+                  "My Lists",
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w500,
                       ),
-                  ],
                 ),
                 bottom: TabBar(
+                  tabAlignment: TabAlignment.center,
                   isScrollable: true,
                   tabs: _tabNames.map((name) {
                     final toDisplay = (() {
@@ -133,7 +117,6 @@ class _ListScreenState extends State<ListScreen>
                   }).toList(),
                 ),
               ),
-              drawer: const CustomDrawer(),
               body: TabBarView(
                 children: [
                   animeList.watching,
