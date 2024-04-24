@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import "package:flutter/services.dart";
 import "package:luffy/screens/browse.dart";
 import "package:luffy/screens/history.dart";
 import "package:luffy/screens/list.dart";
@@ -45,11 +46,28 @@ class _HomeScreenState extends State<HomeScreen>
     );
 
     _tabController.addListener(_handleTabChange);
+
+    if (WidgetsBinding
+            .instance.platformDispatcher.views.first.physicalSize.width <
+        451) {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+      ]);
+    }
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    if (WidgetsBinding
+            .instance.platformDispatcher.views.first.physicalSize.width <
+        451) {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+    }
     super.dispose();
   }
 
