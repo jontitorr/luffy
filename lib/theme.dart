@@ -13,7 +13,7 @@ ThemeData lightTheme({
         fontWeight: FontWeight.w500,
       ),
       iconTheme: IconThemeData(
-        color: Colors.white,
+        color: Colors.black,
       ),
     ),
     canvasColor: const Color.fromARGB(255, 242, 242, 242),
@@ -74,6 +74,7 @@ ThemeData darkTheme({
   return ThemeData(
     appBarTheme: const AppBarTheme(
       systemOverlayStyle: SystemUiOverlayStyle.light,
+      backgroundColor: Colors.black,
       titleTextStyle: TextStyle(
         color: Colors.white,
         fontSize: 20,
