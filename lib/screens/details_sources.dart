@@ -54,7 +54,7 @@ class DetailsScreenSources extends StatefulWidget {
     int watchedEpisodes,
     mal.AnimeListStatus status,
   )? onUpdate;
-  final AnimeExtractor extractor;
+  final AnimeSource extractor;
 
   @override
   State<DetailsScreenSources> createState() => _DetailsScreenSourcesState();

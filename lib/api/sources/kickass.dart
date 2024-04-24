@@ -8,7 +8,7 @@ import "package:luffy/util.dart";
 
 const _baseUrl = "https://kickassanime.am";
 
-class KickassAnime extends AnimeExtractor {
+class KickassAnime extends AnimeSource {
   Future<String?> _getImageUrl(Map<String, dynamic>? posterData) async {
     final formats = posterData?["formats"] ?? [];
 

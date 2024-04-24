@@ -2,7 +2,7 @@ import "package:luffy/api/sources/nineanime.dart";
 import "package:test/test.dart";
 
 void main() {
-  final extractor = NineAnimeExtractor();
+  final extractor = NineAnime();
 
   test("Search should yield results", () async {
     final results = await extractor.search("naruto");

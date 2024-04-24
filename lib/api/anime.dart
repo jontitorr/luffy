@@ -90,7 +90,7 @@ class VideoSource {
   }
 }
 
-abstract class AnimeExtractor {
+abstract class AnimeSource {
   /// Returns the source name.
   /// Example: "GogoAnime"
   String get name;
@@ -123,10 +123,10 @@ abstract class AnimeParser {
 }
 
 final sources = [
-  AllAnimeExtractor(),
-  AnimeFlixExtractor(),
-  AnimePaheExtractor(),
-  GogoAnimeExtractor(),
-  SuperStreamExtractor(),
-  NineAnimeExtractor(),
+  AllAnime(),
+  AnimeFlix(),
+  AnimePahe(),
+  GogoAnime(),
+  SuperStream(),
+  NineAnime(),
 ];

@@ -106,7 +106,7 @@ Future<List<Anime>> _searchAnimeParse(
       .toList();
 }
 
-class NineAnimeExtractor extends AnimeExtractor implements AnimeParser {
+class NineAnime extends AnimeSource implements AnimeParser {
   @override
   String get name => "9anime";
 

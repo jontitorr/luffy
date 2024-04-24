@@ -7,6 +7,7 @@ import "package:dart_des/dart_des.dart";
 import "package:encrypt/encrypt.dart";
 import "package:http/http.dart" as http;
 import "package:luffy/api/anime.dart";
+import "package:luffy/http_client.dart";
 import "package:luffy/util.dart";
 import "package:luffy/util/subtitle.dart" hide Subtitle;
 import "package:pointycastle/export.dart";
@@ -14,25 +15,14 @@ import "package:pointycastle/export.dart";
 final _key =
     Key.fromUtf8(utf8.decode(base64Decode("MTIzZDZjZWRmNjI2ZHk1NDIzM2FhMXc2")));
 final _iv = IV.fromUtf8(utf8.decode(base64Decode("d0VpcGhUbiE=")));
-final _baseApiUrl =
-    utf8.decode(base64Decode("aHR0cHM6Ly9zaG93Ym94LnNoZWd1Lm5ldA=="));
-final _apiUrl =
-    "$_baseApiUrl${utf8.decode(base64Decode("L2FwaS9hcGlfY2xpZW50L2luZGV4Lw=="))}";
-final _secondApiUrl = utf8.decode(
+final _apiUrl = utf8.decode(
   base64Decode(
-    "aHR0cHM6Ly9tYnBhcGkuc2hlZ3UubmV0L2FwaS9hcGlfY2xpZW50L2luZGV4Lw==",
+    "aHR0cHM6Ly9zaG93Ym94LnNoZWd1Lm5ldC9hcGkvYXBpX2NsaWVudC9pbmRleC8=",
   ),
 );
 final _appKey = utf8.decode(base64Decode("bW92aWVib3g="));
 final _appId = utf8.decode(base64Decode("Y29tLnRkby5zaG93Ym94"));
-final _appId2 = utf8.decode(base64Decode("Y29tLm1vdmllYm94cHJvLmFuZHJvaWQ="));
-const _appVersion = "14.7";
-const _appVersionCode = "160";
-
-const _headers = {
-  "Platform": "android",
-  "Accept": "charset=utf-8",
-};
+const _appVersion = "11.5";
 
 String _randomToken() =>
     List.generate(32, (i) => ("0123456789abcdef".split("")..shuffle()).first)
@@ -40,7 +30,7 @@ String _randomToken() =>
 
 String? _encrypt(String str, String key, String iv) {
   try {
-    final cipher = PaddedBlockCipher("DES/CBC/PKCS7");
+    final cipher = PaddedBlockCipher("DESede/CBC/PKCS5Padding");
     final keyParam = KeyParameter(Uint8List.fromList(utf8.encode(key)));
     cipher.init(
       true,
@@ -104,9 +94,8 @@ String? _getVerify(String? str, String str2, String str3) {
 }
 
 Future<dynamic> _queryApi(
-  String query, {
-  bool useAlternateApi = true,
-}) async {
+  String query,
+) async {
   final encrypted = _encrypt(query, _key.toString(), _iv.toString());
   final newBody = {
     "app_key": _md5(_appKey),
@@ -118,29 +107,23 @@ Future<dynamic> _queryApi(
     "data": base64Encoded,
     "appId": "27",
     "platform": "android",
-    "version": _appVersionCode,
+    "version": "129",
     "medium": "Website&token${_randomToken()}",
   };
 
-  prints(
-    "Decrypted test: ${_decrypt("FDGi0pewGc2EaX1jHykG8nGfptPR4xZt+MQjhD9IP24MozQMWVSB/lE1yaYpbWdLKEcZbhoXjZU/ktmj6YkybGV7vluW7brCVQ00PbrQ5xllHPjeeivTheVwCZ+uyOIcWEbUKk79FSPjD4tWaKMVWb1RqjNjyP5vyaIJhLMHQBj7UyVrzyjizAiA2kpI3hgDyJa2PJ1OMJeYvEyOeIRdc7TrAbFNuchucYS+5TgNkJMckztw+H/WwzbWRlZHj3bivdu0MqBC5aewjF86Aoei3s7vWeXI2X5aD9oe+1B9/f9jUIFJO+Z8tZ2TPfzwZ92h", _key, _iv)}",
-  );
-  prints(
-    "Decrypted test: ${_decrypt("FDGi0pewGc2EaX1jHykG8tByS299LDJBUwAej1he8xdZxPjUvva2OUgspIy/cWrY38vmgubbqjcSWzF6ea6wMoTsqpbtuTqo2X5OsK/iy+rZ8tjUfIoiQAhAuJGnOPVKONBn3DLKnh+b0CZpkLTxG/U2pA4XbxeCfJ+hEIKzkMD/RH/SYfMHrtCDrz1a3kqejIyVIjRlpoNxrZiUzta1VvLhKrtUDWJtMCvSOe6sw4W4AXK5jBibpwUPUhAXhNUPVViCtYgBn/Wt40xLkbQeb5tPlb+E6K9hSKiWXUtx0DQ=", _key, _iv)}",
-  );
-  prints(
-    "Decrypted test: ${_decrypt("FDGi0pewGc2EaX1jHykG8nGfptPR4xZt+MQjhD9IP24MozQMWVSB/lE1yaYpbWdLKEcZbhoXjZU/ktmj6YkybGV7vluW7brCVQ00PbrQ5xmhzgI1Y2TmUxh2NmdfxLB6Ccwu0kiOJ9Q4Yy99oBc7XyO+vpiNxWXuZmZDMUP20/XdUsNfjcBj5JE/3NlZZxsHZaSy72E0fBu6ZJmOASnBVze8/NlO+GcBCASC6jj3HFk2wLQDquw0ygLS2cPfoy82n2X8Bhp2eyQCVW7hos8pFtwHHBtO1rrX4rE7S36SrmE=", _key, _iv)}",
-  );
-
   try {
-    final res = await http.post(
-      Uri.parse(useAlternateApi ? _secondApiUrl : _apiUrl),
-      headers: _headers,
-      body: data,
+    final res = await HttpClient.post(
+      _apiUrl,
+      headers: {
+        "Platform": "android",
+        "Accept": "charset=utf-8",
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      data: data,
     );
 
     if (res.statusCode == 200) {
-      return jsonDecode(res.body)["data"];
+      return res.data["data"];
     }
   } catch (e) {
     prints(e);
@@ -740,7 +723,7 @@ class _SuperStream {
     query = query.toLowerCase().replaceAll('"', "");
 
     final apiQuery =
-        """{"childmode":"1","app_version":"$_appVersion","appid":"$_appId2","module":"Search4","channel":"Website","page":"1","lang":"en","type":"all","keyword":"$query","pagelimit":"20","expired_date":"${_getExpiryDate()}","platform":"android"}""";
+        """{"childmode":"1","app_version":"$_appVersion","appid":"$_appId","module":"Search3","channel":"Website","page":"1","lang":"en","type":"all","keyword":"$query","pagelimit":"20","expired_date":"${_getExpiryDate()}","platform":"android"}""";
 
     final results = await _queryApi(apiQuery);
 
@@ -757,8 +740,8 @@ class _SuperStream {
     final isMovie = media.boxType == MediaType.movie;
 
     final apiQuery = isMovie
-        ? """{"childmode":"0","uid":"","app_version":"$_appVersion","appid":"$_appId2","module":"Movie_detail","channel":"Website","mid":"${media.id}","lang":"en","expired_date":"${_getExpiryDate()}","platform":"android","oss":"","group":""}"""
-        : """{"childmode":"0","uid":"","app_version":"$_appVersion","appid":"$_appId2","module":"TV_detail_1","display_all":"1","channel":"Website","lang":"en","expired_date":"${_getExpiryDate()}","platform":"android","tid":"${media.id}"}""";
+        ? """{"childmode":"0","uid":"","app_version":"$_appVersion","appid":"$_appId","module":"Movie_detail","channel":"Website","mid":"${media.id}","lang":"en","expired_date":"${_getExpiryDate()}","platform":"android","oss":"","group":""}"""
+        : """{"childmode":"0","uid":"","app_version":"$_appVersion","appid":"$_appId","module":"TV_detail_1","display_all":"1","channel":"Website","lang":"en","expired_date":"${_getExpiryDate()}","platform":"android","tid":"${media.id}"}""";
 
     return await _queryApi(apiQuery);
   }
@@ -768,7 +751,7 @@ class _SuperStream {
 
     for (final it in series.season) {
       final apiQuery =
-          """{"childmode":"0","app_version":"$_appVersion","year":"0","appid":"$_appId2","module":"TV_episode","display_all":"1","channel":"Website","season":"$it","lang":"en","expired_date":"${_getExpiryDate()}","platform":"android","tid":"${series.id}"}""";
+          """{"childmode":"0","app_version":"$_appVersion","year":"0","appid":"$_appId","module":"TV_episode","display_all":"1","channel":"Website","season":"$it","lang":"en","expired_date":"${_getExpiryDate()}","platform":"android","tid":"${series.id}"}""";
       final results = await _queryApi(apiQuery);
 
       if (results == null) {
@@ -905,7 +888,7 @@ class _SuperStream {
   }
 }
 
-class SuperStreamExtractor extends AnimeExtractor {
+class SuperStream extends AnimeSource {
   @override
   String get name => "SuperStream";
 

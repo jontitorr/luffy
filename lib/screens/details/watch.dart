@@ -46,7 +46,7 @@ class WatchScreen extends StatefulWidget {
 class _WatchScreenState extends State<WatchScreen>
     with AutomaticKeepAliveClientMixin {
   late Future<_Data?> _dataFuture;
-  AnimeExtractor _extractor = sources.first;
+  AnimeSource _extractor = sources.first;
   int _extractorIndex = 0;
 
   Future<_Data?> _getData(bool firstTime) async {

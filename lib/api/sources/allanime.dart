@@ -59,7 +59,7 @@ class _Server {
   final double priority;
 }
 
-class AllAnimeExtractor extends AnimeExtractor {
+class AllAnime extends AnimeSource {
   @override
   Future<List<Episode>> getEpisodes(Anime anime) async {
     try {

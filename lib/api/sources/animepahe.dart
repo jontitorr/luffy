@@ -60,7 +60,7 @@ class _Search {
   final List<_SearchData> data;
 }
 
-class AnimePaheExtractor extends AnimeExtractor {
+class AnimePahe extends AnimeSource {
   @override
   String get name => "AnimePahe";
 

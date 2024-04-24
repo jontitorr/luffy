@@ -10,7 +10,7 @@ import "package:luffy/util.dart";
 
 const _baseUrl = "https://anitaku.to";
 
-class GogoAnimeExtractor extends AnimeExtractor {
+class GogoAnime extends AnimeSource {
   @override
   String get name => "GogoAnime";
 

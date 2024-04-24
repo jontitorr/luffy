@@ -23,8 +23,6 @@ final _dio = () {
 
 const _headers = {
   "referer": "https://animeflix.live/",
-  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-      "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
   "X-Requested-With": "XMLHttpRequest",
 };
 
@@ -201,31 +199,6 @@ class EpisodeData {
       };
 }
 
-class AnimeFlix {
-  static Future<List<AnimeData>?> search(String query) async {
-    try {
-      final res = await _dio.get(
-        "$_baseUrl/info?query=${Uri.encodeComponent(query)}&limit=15",
-        options: Options(headers: _headers, responseType: ResponseType.json),
-      );
-
-      if (res.statusCode == 200) {
-        final data = res.data;
-
-        if (data != null) {
-          return List<AnimeData>.from(
-            data.map((e) => AnimeData.fromJson(e)),
-          );
-        }
-      }
-    } catch (e) {
-      prints("Failed to search anime AnimeFlix: $e");
-    }
-
-    return null;
-  }
-}
-
 Future<VideoSource?> _getVideoUrl(Uri watchUri, {String? currentSource}) async {
   try {
     final source = await (() async {
@@ -293,28 +266,39 @@ Future<VideoSource?> _getVideoUrl(Uri watchUri, {String? currentSource}) async {
   }
 }
 
-class AnimeFlixExtractor extends AnimeExtractor {
+class AnimeFlix extends AnimeSource {
   @override
   String get name => "AnimeFlix";
 
   @override
   Future<List<Anime>> search(String query) async {
-    final data = await AnimeFlix.search(query);
-
-    if (data != null) {
-      return List<Anime>.from(
-        data.map(
-          (e) => Anime(
-            title: e.title?["userPreferred"] ??
-                e.title?["romaji"] ??
-                e.title?["english"] ??
-                e.title?["native"] ??
-                "Unknown",
-            imageUrl: e.images?.large ?? "",
-            url: jsonEncode(e.toJson()),
-          ),
-        ),
+    try {
+      final res = await _dio.get(
+        "$_baseUrl/info?query=${Uri.encodeComponent(query)}&limit=15",
+        options: Options(headers: _headers, responseType: ResponseType.json),
       );
+
+      if (res.statusCode == 200) {
+        if (res.data == null) {
+          return [];
+        }
+
+        return List<Anime>.from(
+          res.data.map(
+            (e) => Anime(
+              title: e["title"]?["userPreferred"] ??
+                  e["title"]?["romaji"] ??
+                  e["title"]?["english"] ??
+                  e["title"]?["native"] ??
+                  "Unknown",
+              imageUrl: e["images"]?["large"] ?? "",
+              url: e,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      prints("Failed to search anime AnimeFlix: $e");
     }
 
     return [];
