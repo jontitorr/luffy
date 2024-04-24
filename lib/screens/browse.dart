@@ -5,8 +5,23 @@ import "package:flutter/material.dart";
 import "package:luffy/api/anilist.dart";
 import "package:luffy/components/anime_card.dart";
 import "package:luffy/components/parallax_container.dart";
+import "package:luffy/screens/browse_all.dart";
 import "package:luffy/screens/details.dart";
 import "package:luffy/screens/details/calen.dart";
+
+DateTime _nextSeasonStartDate() {
+  final now = DateTime.now();
+  return DateTime(
+    now.year,
+    (((now.month ~/ 3) % 4 + 1) % 4 * 3) + 1,
+  );
+}
+
+Future<PageResult?> Function(int) _seasonFunc({
+  DateTime? start,
+}) {
+  return (page) => AnilistService.popularSeason(page, start: start);
+}
 
 class BrowseScreen extends StatefulWidget {
   const BrowseScreen({super.key});
@@ -203,15 +218,40 @@ class _BrowseScreenState extends State<BrowseScreen>
                         child: const Text("Calendar"),
                       ),
                       const SizedBox(height: 16),
-                      // Heading for "Recently Updated"
-                      const Text(
-                        "Recently Updated",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
-                        textAlign: TextAlign.left,
+                      Row(
+                        children: [
+                          const Text(
+                            "Popular This Season",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                            textAlign: TextAlign.left,
+                          ),
+                          const SizedBox(width: 8),
+                          // See More rounded primary color button.
+                          ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const BrowseAllScreen(
+                                    animeFuture: AnilistService.popularSeason,
+                                    title: "Popular This Season",
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Text(
+                              "See More",
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
+
                       // List of recently updated
                       SizedBox(
                         height: 220,
@@ -270,15 +310,75 @@ class _BrowseScreenState extends State<BrowseScreen>
                           },
                         ),
                       ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          const Text(
+                            "Popular Next Season",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                            textAlign: TextAlign.left,
+                          ),
+                          const SizedBox(width: 8),
+                          // See More rounded primary color button.
+                          ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => BrowseAllScreen(
+                                    animeFuture: _seasonFunc(
+                                      start: _nextSeasonStartDate(),
+                                    ),
+                                    title: "Popular Next Season",
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Text(
+                              "See More",
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 8),
-                      // Heading for "Recently Updated"
-                      const Text(
-                        "Popular Anime",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
-                        textAlign: TextAlign.left,
+                      Row(
+                        children: [
+                          const Text(
+                            "Popular Anime",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                            textAlign: TextAlign.left,
+                          ),
+                          const SizedBox(width: 8),
+                          // See More rounded primary color button.
+                          ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const BrowseAllScreen(
+                                    animeFuture: AnilistService.popular,
+                                    title: "Popular Anime",
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Text(
+                              "See More",
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 16),
                       // Show the rest of the popular anime within the column to listview required.

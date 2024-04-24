@@ -4,6 +4,8 @@ import "package:http/http.dart" as http;
 import "package:luffy/http_client.dart";
 import "package:luffy/util.dart";
 
+final _seasons = ["WINTER", "SPRING", "SUMMER", "FALL"];
+
 DateTime? _parseDateObj(Map<String, dynamic> json) {
   return null;
 }
@@ -211,6 +213,7 @@ class SearchResult {
     required this.titleEnglish,
     required this.titleRomaji,
     required this.titleUserPreferred,
+    this.languages = const [],
   });
 
   SearchResult.fromJson(Map<String, dynamic> json)
@@ -232,7 +235,10 @@ class SearchResult {
         coverImage = json["coverImage"]["large"],
         titleEnglish = json["title"]["english"],
         titleRomaji = json["title"]["romaji"],
-        titleUserPreferred = json["title"]["userPreferred"];
+        titleUserPreferred = json["title"]["userPreferred"],
+        languages = List<String>.from(
+          (json["staff"]?["edges"] ?? []).map((x) => x["node"]["languageV2"]),
+        ).toSet().toList();
 
   final int id;
   final int? malId;
@@ -250,6 +256,7 @@ class SearchResult {
   final String? titleEnglish;
   final String titleRomaji;
   final String titleUserPreferred;
+  final List<String> languages;
 }
 
 class StaffPreview {
@@ -342,6 +349,36 @@ class GenresAndTags {
 
   final List<String> genres;
   final List<String> tags;
+}
+
+class PageResult {
+  PageResult({
+    required this.pageInfo,
+    required this.results,
+  });
+
+  PageResult.fromJson(Map<String, dynamic> json)
+      : pageInfo = PageInfo.fromJson(json["pageInfo"]),
+        results = json["media"]
+            .map<SearchResult>((json) => SearchResult.fromJson(json))
+            .toList();
+
+  final PageInfo pageInfo;
+  final List<SearchResult> results;
+}
+
+class PageInfo {
+  PageInfo({
+    required this.hasNextPage,
+    required this.total,
+  });
+
+  PageInfo.fromJson(Map<String, dynamic> json)
+      : hasNextPage = json["hasNextPage"],
+        total = json["total"];
+
+  final bool hasNextPage;
+  final int total;
 }
 
 class AnilistService {
@@ -489,34 +526,25 @@ class AnilistService {
     }
   }
 
-  static Future<List<SearchResult>> popular() async {
+  static Future<PageResult?> popular(int page) async {
     final params = {
       "query":
-          r"query($page:Int=1,$id:Int,$type:MediaType,$isAdult:Boolean=false,$search:String,$format:[MediaFormat],$status:MediaStatus,$countryOfOrigin:CountryCode,$source:MediaSource,$season:MediaSeason,$seasonYear:Int,$year:String,$onList:Boolean,$yearLesser:FuzzyDateInt,$yearGreater:FuzzyDateInt,$episodeLesser:Int,$episodeGreater:Int,$durationLesser:Int,$durationGreater:Int,$chapterLesser:Int,$chapterGreater:Int,$volumeLesser:Int,$volumeGreater:Int,$licensedBy:[String],$isLicensed:Boolean,$genres:[String],$excludedGenres:[String],$tags:[String],$excludedTags:[String],$minimumTagRank:Int,$sort:[MediaSort]=[POPULARITY_DESC,SCORE_DESC]){Page(page:$page,perPage:50){pageInfo{total perPage currentPage lastPage hasNextPage}media(id:$id,type:$type,season:$season,format_in:$format,status:$status,countryOfOrigin:$countryOfOrigin,source:$source,search:$search,onList:$onList,seasonYear:$seasonYear,startDate_like:$year,startDate_lesser:$yearLesser,startDate_greater:$yearGreater,episodes_lesser:$episodeLesser,episodes_greater:$episodeGreater,duration_lesser:$durationLesser,duration_greater:$durationGreater,chapters_lesser:$chapterLesser,chapters_greater:$chapterGreater,volumes_lesser:$volumeLesser,volumes_greater:$volumeGreater,licensedBy_in:$licensedBy,isLicensed:$isLicensed,genre_in:$genres,genre_not_in:$excludedGenres,tag_in:$tags,tag_not_in:$excludedTags,minimumTagRank:$minimumTagRank,sort:$sort,isAdult:$isAdult){id idMal isAdult status chapters episodes nextAiringEpisode{episode}type genres meanScore isFavourite format bannerImage coverImage{large extraLarge}title{english romaji userPreferred}mediaListEntry{progress private score(format:POINT_100)status}}}}",
-      "variables": '{"type":"ANIME","isAdult":false,"sort":"POPULARITY_DESC"}',
+          r"query($page:Int=1,$id:Int,$type:MediaType,$isAdult:Boolean=false,$search:String,$format:[MediaFormat],$status:MediaStatus,$countryOfOrigin:CountryCode,$source:MediaSource,$season:MediaSeason,$seasonYear:Int,$year:String,$onList:Boolean,$yearLesser:FuzzyDateInt,$yearGreater:FuzzyDateInt,$episodeLesser:Int,$episodeGreater:Int,$durationLesser:Int,$durationGreater:Int,$chapterLesser:Int,$chapterGreater:Int,$volumeLesser:Int,$volumeGreater:Int,$licensedBy:[String],$isLicensed:Boolean,$genres:[String],$excludedGenres:[String],$tags:[String],$excludedTags:[String],$minimumTagRank:Int,$sort:[MediaSort]=[POPULARITY_DESC,SCORE_DESC]){Page(page:$page,perPage:50){pageInfo{total perPage currentPage lastPage hasNextPage}media(id:$id,type:$type,season:$season,format_in:$format,status:$status,countryOfOrigin:$countryOfOrigin,source:$source,search:$search,onList:$onList,seasonYear:$seasonYear,startDate_like:$year,startDate_lesser:$yearLesser,startDate_greater:$yearGreater,episodes_lesser:$episodeLesser,episodes_greater:$episodeGreater,duration_lesser:$durationLesser,duration_greater:$durationGreater,chapters_lesser:$chapterLesser,chapters_greater:$chapterGreater,volumes_lesser:$volumeLesser,volumes_greater:$volumeGreater,licensedBy_in:$licensedBy,isLicensed:$isLicensed,genre_in:$genres,genre_not_in:$excludedGenres,tag_in:$tags,tag_not_in:$excludedTags,minimumTagRank:$minimumTagRank,sort:$sort,isAdult:$isAdult){id idMal isAdult status chapters episodes nextAiringEpisode{episode}type genres meanScore isFavourite format bannerImage coverImage{large extraLarge}title{english romaji userPreferred}mediaListEntry{progress private score(format:POINT_100)status}staff{edges{node{languageV2}}}}}}",
+      "variables": {
+        "page": page,
+        "type": "ANIME",
+        "isAdult": false,
+        "sort": "POPULARITY_DESC",
+      },
     };
 
-    try {
-      final res = await http.post(
-        Uri.parse("https://graphql.anilist.co"),
-        body: params,
-      );
-      final data = jsonDecode(res.body)["data"]["Page"]["media"];
-      final ret = <SearchResult>[];
-
-      for (final item in data) {
-        if (item["media"]?["countryOfOrigin"] == "CN") {
-          continue;
-        }
-
-        ret.add(SearchResult.fromJson(item));
-      }
-
-      return ret;
-    } catch (e) {
-      prints("Failed to get anime info: $e");
-      return [];
-    }
+    return HttpClient.post(
+      "https://graphql.anilist.co",
+      data: params,
+    ).then(
+      (res) => PageResult.fromJson(res.data["data"]["Page"]),
+      onError: (e) => null,
+    );
   }
 
   static Future<List<WeeklySearchResult>> weekly() async {
@@ -588,20 +616,19 @@ class AnilistService {
 
   static Future<BrowseResult?> browse() async {
     final now = DateTime.now();
-    final seasons = ["WINTER", "SPRING", "SUMMER", "FALL"];
     final month = now.month;
     final seasonIndex = (month ~/ 3) % 4;
-    final season = seasons[seasonIndex];
+    final season = _seasons[seasonIndex];
 
     // Calculate next season/year. For example, we increment a year if we're in the last season of the year.
     final nextSeasonIndex = (seasonIndex + 1) % 4;
     final nextYear = now.year + ((seasonIndex + 1) ~/ 4);
-    final nextSeason = seasons[nextSeasonIndex];
+    final nextSeason = _seasons[nextSeasonIndex];
     final nextSeasonYear = nextSeasonIndex == 0 ? nextYear + 1 : nextYear;
 
     final params = {
       "query":
-          r"query($season:MediaSeason,$seasonYear:Int $nextSeason:MediaSeason,$nextYear:Int){trending:Page(page:1,perPage:6){media(sort:TRENDING_DESC,type:ANIME,isAdult:false){...media}}season:Page(page:1,perPage:6){media(season:$season,seasonYear:$seasonYear,sort:POPULARITY_DESC,type:ANIME,isAdult:false){...media}}nextSeason:Page(page:1,perPage:6){media(season:$nextSeason,seasonYear:$nextYear,sort:POPULARITY_DESC,type:ANIME,isAdult:false){...media}}popular:Page(page:1,perPage:6){media(sort:POPULARITY_DESC,type:ANIME,isAdult:false){...media}}top:Page(page:1,perPage:10){media(sort:SCORE_DESC,type:ANIME,isAdult:false){...media}}}fragment media on Media{id idMal title{english romaji userPreferred}coverImage{extraLarge large color}startDate{year month day}endDate{year month day}bannerImage season seasonYear description type format status(version:2)episodes duration chapters volumes genres meanScore isAdult averageScore popularity mediaListEntry{id status}nextAiringEpisode{airingAt timeUntilAiring episode}studios(isMain:true){edges{isMain node{id name}}}}",
+          r"query($season:MediaSeason,$seasonYear:Int $nextSeason:MediaSeason,$nextYear:Int){trending:Page(page:1,perPage:10){media(sort:TRENDING_DESC,type:ANIME,isAdult:false){...media}}season:Page(page:1,perPage:10){media(season:$season,seasonYear:$seasonYear,sort:POPULARITY_DESC,type:ANIME,isAdult:false){...media}}nextSeason:Page(page:1,perPage:10){media(season:$nextSeason,seasonYear:$nextYear,sort:POPULARITY_DESC,type:ANIME,isAdult:false){...media}}popular:Page(page:1,perPage:10){media(sort:POPULARITY_DESC,type:ANIME,isAdult:false){...media}}top:Page(page:1,perPage:10){media(sort:SCORE_DESC,type:ANIME,isAdult:false){...media}}}fragment media on Media{id idMal title{english romaji userPreferred}coverImage{extraLarge large color}startDate{year month day}endDate{year month day}bannerImage season seasonYear description type format status(version:2)episodes duration chapters volumes genres meanScore isAdult averageScore popularity mediaListEntry{id status}nextAiringEpisode{airingAt timeUntilAiring episode}studios(isMain:true){edges{isMain node{id name}}}}",
       "variables": {
         "season": season,
         "seasonYear": now.year,
@@ -610,10 +637,16 @@ class AnilistService {
       },
     };
 
-    return HttpClient.post(
-      "https://graphql.anilist.co",
-      data: params,
-    ).then((res) => BrowseResult.fromJson(res.data["data"]));
+    try {
+      final ret = await HttpClient.post(
+        "https://graphql.anilist.co",
+        data: params,
+      ).then((res) => BrowseResult.fromJson(res.data["data"]));
+      return ret;
+    } catch (e) {
+      prints("Failed to get anime info: $e");
+      return null;
+    }
   }
 
   static Future<GenresAndTags?> genresAndTags() async {
@@ -626,5 +659,34 @@ class AnilistService {
       "https://graphql.anilist.co",
       data: params,
     ).then((res) => GenresAndTags.fromJson(res.data["data"]));
+  }
+
+  static Future<PageResult?> popularSeason(
+    int page, {
+    DateTime? start,
+  }) async {
+    final now = start ?? DateTime.now();
+    final month = now.month;
+    final seasonIndex = (month ~/ 3) % 4;
+    final season = _seasons[seasonIndex];
+
+    final params = {
+      "query":
+          r"query($page:Int = 1 $id:Int $type:MediaType $isAdult:Boolean = false $search:String $format:[MediaFormat]$status:MediaStatus $countryOfOrigin:CountryCode $source:MediaSource $season:MediaSeason $seasonYear:Int $year:String $onList:Boolean $yearLesser:FuzzyDateInt $yearGreater:FuzzyDateInt $episodeLesser:Int $episodeGreater:Int $durationLesser:Int $durationGreater:Int $chapterLesser:Int $chapterGreater:Int $volumeLesser:Int $volumeGreater:Int $licensedBy:[Int]$isLicensed:Boolean $genres:[String]$excludedGenres:[String]$tags:[String]$excludedTags:[String]$minimumTagRank:Int $sort:[MediaSort]=[POPULARITY_DESC,SCORE_DESC]){Page(page:$page,perPage:20){pageInfo{total perPage currentPage lastPage hasNextPage}media(id:$id type:$type season:$season format_in:$format status:$status countryOfOrigin:$countryOfOrigin source:$source search:$search onList:$onList seasonYear:$seasonYear startDate_like:$year startDate_lesser:$yearLesser startDate_greater:$yearGreater episodes_lesser:$episodeLesser episodes_greater:$episodeGreater duration_lesser:$durationLesser duration_greater:$durationGreater chapters_lesser:$chapterLesser chapters_greater:$chapterGreater volumes_lesser:$volumeLesser volumes_greater:$volumeGreater licensedById_in:$licensedBy isLicensed:$isLicensed genre_in:$genres genre_not_in:$excludedGenres tag_in:$tags tag_not_in:$excludedTags minimumTagRank:$minimumTagRank sort:$sort isAdult:$isAdult){id title{english romaji userPreferred}coverImage{extraLarge large color}startDate{year month day}endDate{year month day}bannerImage season seasonYear description type format status(version:2)episodes duration chapters volumes genres isAdult averageScore popularity nextAiringEpisode{airingAt timeUntilAiring episode}mediaListEntry{id status}staff{edges{node{languageV2}}}studios(isMain:true){edges{isMain node{id name}}}}}}",
+      "variables": {
+        "page": page,
+        "type": "ANIME",
+        "seasonYear": now.year,
+        "season": season,
+      },
+    };
+
+    return HttpClient.post(
+      "https://graphql.anilist.co",
+      data: params,
+    ).then(
+      (res) => PageResult.fromJson(res.data["data"]["Page"]),
+      onError: (e) => null,
+    );
   }
 }
