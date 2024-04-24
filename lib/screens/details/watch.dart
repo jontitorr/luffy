@@ -1,3 +1,4 @@
+import "package:cached_network_image/cached_network_image.dart";
 import "package:flutter/material.dart";
 import "package:luffy/api/anime.dart";
 import "package:luffy/api/history.dart";
@@ -360,6 +361,17 @@ class _WatchScreenState extends State<WatchScreen>
             return Column(
               children: [
                 ..._buildDropdownButton(),
+                const SizedBox(height: 8),
+                Text(
+                  "Match: ${data.anime.title}",
+                ),
+                const SizedBox(height: 8),
+                CachedNetworkImage(
+                  imageUrl: data.anime.imageUrl ?? "",
+                  height: 200,
+                  errorWidget: (context, url, error) => Container(),
+                ),
+                const SizedBox(height: 8),
                 ..._buildResumeButton(data),
                 EpisodeList(
                   episodes: data.episodes,
