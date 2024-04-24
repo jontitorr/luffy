@@ -44,6 +44,7 @@ class HttpClient {
         DioCacheInterceptor(
           options: CacheOptions(
             store: HiveCacheStore(tempDir.path),
+            policy: CachePolicy.forceCache,
             hitCacheOnErrorExcept: [],
             allowPostMethod: true,
             keyBuilder: (req) {
@@ -58,7 +59,7 @@ class HttpClient {
       self._client.interceptors.add(
         PrettyDioLogger(
           requestHeader: true,
-          requestBody: true,
+          responseBody: false,
         ),
       );
       self._client.options.connectTimeout = const Duration(seconds: 30);
@@ -85,28 +86,6 @@ class HttpClient {
     );
     self._cookieManager = CookieManager(jar);
     self._client.interceptors.add(self._cookieManager!);
-    // self._client.interceptors.add(
-    //   DioCacheInterceptor(
-    //     options: CacheOptions(
-    //       store: HiveCacheStore(tempDir.path),
-    //       hitCacheOnErrorExcept: [],
-    //       allowPostMethod: true,
-    //       keyBuilder: (req) {
-    //         return _uuid.v5(
-    //           Uuid.NAMESPACE_URL,
-    //           req.uri.toString() + req.data.toString(),
-    //         );
-    //       },
-    //     ),
-    //   ),
-    // );
-    self._client.interceptors.add(
-      PrettyDioLogger(
-        requestHeader: true,
-        requestBody: true,
-        logPrint: prints,
-      ),
-    );
     self._client.options.connectTimeout = const Duration(seconds: 30);
     self._client.options.followRedirects = false;
     self._client.options.validateStatus =
