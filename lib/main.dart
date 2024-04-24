@@ -52,6 +52,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   MalToken? _token;
   UserSettings? _settings;
+  late Future<(MalToken?, UserSettings?)> _dataFuture;
 
   void changeThemeColor(Color color) {
     // TODO(xminent): Maybe add more customization in terms of being able to
@@ -101,35 +102,36 @@ class _MyAppState extends State<MyApp> {
 
   MalToken? get malToken => _token;
 
+  Future<(MalToken?, UserSettings)> getData() async {
+    final token = await MalToken.getInstance();
+    final settings = await UserSettings.getInstance();
+
+    setState(() {
+      _token = token;
+      _settings = settings;
+    });
+
+    return (token, settings);
+  }
+
   @override
   void initState() {
     super.initState();
-
-    MalToken.getInstance().then((token) {
-      setState(() {
-        _token = token;
-      });
-    });
-
-    UserSettings.getInstance().then((settings) {
-      setState(() {
-        _settings = settings;
-      });
-    });
+    _dataFuture = getData();
   }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-      future: Future.wait([MalToken.getInstance(), UserSettings.getInstance()]),
+      future: _dataFuture,
       builder: (context, snapshot) {
         // If still waiting show loading indicator.
         if (snapshot.connectionState != ConnectionState.done) {
           return const LoadingIndicator();
         }
 
-        final token = snapshot.data![0] as MalToken?;
-        final settings = snapshot.data![1]! as UserSettings;
+        final token = snapshot.data!.$1;
+        final settings = snapshot.data!.$2!;
 
         return MaterialApp(
           title: "Luffy",
