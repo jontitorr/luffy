@@ -19,7 +19,11 @@ class WelcomeScreen extends StatefulWidget {
 class _WelcomeScreenState extends State<WelcomeScreen> {
   @override
   void dispose() {
-    SystemChrome.setPreferredOrientations([]);
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
     UserSettings.setWelcomeScreenShown(true);
     super.dispose();
   }
