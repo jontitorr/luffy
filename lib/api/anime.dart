@@ -26,6 +26,7 @@ class Episode {
     this.thumbnailUrl,
     this.rating,
     this.synopsis,
+    this.isDub = false,
   });
 
   final String? title;
@@ -33,6 +34,7 @@ class Episode {
   final String? thumbnailUrl;
   final int? rating;
   final String? synopsis;
+  final bool isDub;
 }
 
 class Subtitle {

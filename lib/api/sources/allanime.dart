@@ -95,6 +95,7 @@ class AllAnime extends AnimeSource {
           Episode(
             title: "Episode $e (dub)",
             url: "$id<&sep>dub<&sep>$e",
+            isDub: true,
           ),
         );
       });

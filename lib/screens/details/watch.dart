@@ -49,6 +49,21 @@ class _WatchScreenState extends State<WatchScreen>
   late Future<_Data?> _dataFuture;
   AnimeSource _extractor = sources.first;
   int _extractorIndex = 0;
+  var _isDubSelected = false;
+
+  void _toggleDubSubMode(bool? value) {
+    if (value != null) {
+      setState(() {
+        _isDubSelected = value;
+      });
+    }
+  }
+
+  List<Episode> _filterEpisodes(List<Episode> episodes) {
+    return episodes
+        .where((episode) => episode.isDub == _isDubSelected)
+        .toList();
+  }
 
   Future<_Data?> _getData(bool firstTime) async {
     final thumb = await kitsu.KituService.search(widget.animeId);
@@ -373,8 +388,25 @@ class _WatchScreenState extends State<WatchScreen>
                 ),
                 const SizedBox(height: 8),
                 ..._buildResumeButton(data),
+                if (data.episodes.any((e) => e.isDub))
+                  Row(
+                    children: [
+                      Radio(
+                        value: false,
+                        groupValue: _isDubSelected,
+                        onChanged: _toggleDubSubMode,
+                      ),
+                      const Text("Sub"),
+                      Radio(
+                        value: true,
+                        groupValue: _isDubSelected,
+                        onChanged: _toggleDubSubMode,
+                      ),
+                      const Text("Dub"),
+                    ],
+                  ),
                 EpisodeList(
-                  episodes: data.episodes,
+                  episodes: _filterEpisodes(data.episodes),
                   episodeInfo: data.info,
                   episodeInfoKitsu: data.moreInfo,
                   episodeProgress: data.progress,

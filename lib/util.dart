@@ -221,3 +221,19 @@ extension MapNotNull<T> on Iterable<T> {
     return ret;
   }
 }
+
+extension ChunkedList<T> on List<T> {
+  List<List<T>> chunked(int chunkSize) {
+    if (isEmpty) {
+      return [];
+    }
+
+    final ret = <List<T>>[];
+
+    for (var i = 0; i < length; i += chunkSize) {
+      ret.add(sublist(i, min(i + chunkSize, length)));
+    }
+
+    return ret;
+  }
+}

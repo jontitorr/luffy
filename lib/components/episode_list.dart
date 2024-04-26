@@ -5,6 +5,7 @@ import "package:flutter/material.dart";
 import "package:luffy/api/anime.dart";
 import "package:luffy/api/kitsu.dart" as kitsu;
 import "package:luffy/api/mal.dart" as mal;
+import "package:luffy/util.dart";
 
 class EpisodeList extends StatefulWidget {
   const EpisodeList({
@@ -33,19 +34,17 @@ class EpisodeList extends StatefulWidget {
 class _EpisodeListState extends State<EpisodeList> {
   late int _startIndex = (widget.watchedEpisodes + 1) ~/ 20 * 20;
   late int _endIndex = min(_startIndex + 20, widget.episodes.length);
-  late final _showDropdown = widget.episodes.length > 20;
+  late var _showDropdown = widget.episodes.length > 20;
+  late var _episodesChunks = widget.episodes.chunked(20);
 
-  late final _episodesChunks = (() {
-    final chunks = <List<Episode>>[];
-
-    for (int i = 0; i < widget.episodes.length; i += 20) {
-      chunks.add(
-        widget.episodes.sublist(i, min(i + 20, widget.episodes.length)),
-      );
-    }
-
-    return chunks;
-  })();
+  @override
+  void didUpdateWidget(covariant EpisodeList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _startIndex = (widget.watchedEpisodes + 1) ~/ 20 * 20;
+    _endIndex = min(_startIndex + 20, widget.episodes.length);
+    _showDropdown = widget.episodes.length > 20;
+    _episodesChunks = widget.episodes.chunked(20);
+  }
 
   void _onDropdownChanged(int? index) {
     if (index == null) {
@@ -118,18 +117,40 @@ class _EpisodeListState extends State<EpisodeList> {
         widget.episodeInfoKitsu.elementAtOrNull(idx)?.title;
 
     final title = altTitle ?? episode.title;
-    final titleText =
-        title != null ? "${idx + 1}: $title" : "Episode ${idx + 1}";
     final rating = episode.rating;
 
     horizontal.add(
-      Expanded(
+      Flexible(
         flex: 3,
-        child: Text(
-          titleText,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Flexible(
+              flex: 4,
+              child: Text(
+                title != null ? "${idx + 1}: $title" : "Episode ${idx + 1}",
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            if (title == altTitle && episode.title != null) ...[
+              const Flexible(child: SizedBox(height: 4)),
+              Flexible(
+                flex: 2,
+                child: Text(
+                  episode.title!,
+                  style: const TextStyle(
+                    fontStyle: FontStyle.italic,
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );
@@ -202,10 +223,6 @@ class _EpisodeListState extends State<EpisodeList> {
 
     if (itemsVertical.length > 1) {
       return Column(
-        // TODO(xminent): Potentially remove this as it makes the UI look weird
-        mainAxisAlignment: thumbnail == null
-            ? MainAxisAlignment.spaceBetween
-            : MainAxisAlignment.start,
         children: [
           Flexible(child: row),
           ...itemsVertical,
