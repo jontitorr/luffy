@@ -13,14 +13,14 @@ import "package:tuple/tuple.dart";
 
 class _Data {
   _Data({
-    required this.anime,
+    required this.animes,
     required this.info,
     required this.moreInfo,
     required this.episodes,
     required this.progress,
   });
 
-  final Anime anime;
+  final List<Anime> animes;
   final List<mal.Episode> info;
   final List<kitsu.Episode> moreInfo;
   final List<Episode> episodes;
@@ -55,6 +55,7 @@ class _WatchScreenState extends State<WatchScreen>
   AnimeSource _extractor = sources.first;
   int _extractorIndex = 0;
   var _isDubSelected = false;
+  int _animeIndex = 0;
 
   void _toggleDubSubMode(bool? value) {
     if (value != null) {
@@ -74,12 +75,15 @@ class _WatchScreenState extends State<WatchScreen>
     final animeId = widget.animeId;
     final thumb =
         animeId != null ? await kitsu.KituService.search(animeId) : null;
-    final anime = await _getAnime(firstTime);
+    final animes = await _getAnimes(firstTime);
 
-    if (anime == null) {
-      return null;
+    if (firstTime) {
+      _animeIndex = widget.title
+          .bestMatch(animes.map((e) => e.title).toList())
+          .bestMatchIndex;
     }
 
+    final anime = animes[_animeIndex];
     final episodes = await _extractor.getEpisodes(anime);
 
     if (episodes.isEmpty) {
@@ -91,7 +95,7 @@ class _WatchScreenState extends State<WatchScreen>
         : null;
 
     return _Data(
-      anime: anime,
+      animes: animes,
       info:
           animeId != null ? await mal.MalService.getAnimeEpisodes(animeId) : [],
       moreInfo: thumb ?? [],
@@ -100,25 +104,11 @@ class _WatchScreenState extends State<WatchScreen>
     );
   }
 
-  Future<Anime?> _getAnime(
+  Future<List<Anime>> _getAnimes(
     bool firstTime,
   ) async {
-    Future<Anime?> bestMatch() async {
-      final results = await _extractor.search(widget.title);
-
-      if (results.isEmpty) {
-        return null;
-      }
-
-      final titles = results.map((e) => e.title).toList();
-      prints("Matching ${widget.title} against: $titles");
-      final best = widget.title.bestMatch(titles);
-      prints("Ratings: ${best.ratings}");
-      return results[best.bestMatchIndex];
-    }
-
     if (!firstTime) {
-      return bestMatch();
+      return _extractor.search(widget.title);
     }
 
     prints("Extractor index BEFORE: $_extractorIndex");
@@ -126,9 +116,9 @@ class _WatchScreenState extends State<WatchScreen>
     for (; _extractorIndex < sources.length; _extractorIndex++) {
       _extractor = sources[_extractorIndex];
 
-      final best = await bestMatch();
+      final results = await _extractor.search(widget.title);
 
-      if (best == null) {
+      if (results.isEmpty) {
         continue;
       }
 
@@ -138,10 +128,10 @@ class _WatchScreenState extends State<WatchScreen>
 
       prints("Extractor index AFTER: $_extractorIndex");
       setState(() {});
-      return best;
+      return results;
     }
 
-    return null;
+    return [];
   }
 
   void _handleExtractorChanged(int? idx) {
@@ -292,6 +282,7 @@ class _WatchScreenState extends State<WatchScreen>
           ),
         )
         .toList();
+    final anime = data.animes[_animeIndex];
 
     final progress = await Navigator.of(context).push<double>(
       MaterialPageRoute(
@@ -302,11 +293,11 @@ class _WatchScreenState extends State<WatchScreen>
           episodeNum: idx,
           sourceName: _extractor.name,
           savedProgress: episodeProgress,
-          imageUrl: data.anime.imageUrl,
+          imageUrl: anime.imageUrl,
           episodes: episodes,
           sourceFetcher: (ep) => _extractor.getSources(ep),
           animeId: widget.animeId,
-          showUrl: data.anime.url,
+          showUrl: anime.url,
           languages: widget.languages,
         ),
       ),
@@ -390,14 +381,17 @@ class _WatchScreenState extends State<WatchScreen>
               children: [
                 ..._buildDropdownButton(),
                 const SizedBox(height: 8),
-                Text(
-                  "Match: ${data.anime.title}",
-                ),
-                const SizedBox(height: 8),
-                CachedNetworkImage(
-                  imageUrl: data.anime.imageUrl ?? "",
-                  height: 200,
-                  errorWidget: (context, url, error) => Container(),
+                _AnimeSelect(
+                  animes: data.animes,
+                  onAnimeClicked: (idx) {
+                    if (idx != _animeIndex) {
+                      setState(() {
+                        _animeIndex = idx;
+                        _dataFuture = _getData(false);
+                      });
+                    }
+                  },
+                  currentIndex: _animeIndex,
                 ),
                 const SizedBox(height: 8),
                 ..._buildResumeButton(data),
@@ -442,4 +436,85 @@ class _WatchScreenState extends State<WatchScreen>
 
   @override
   bool get wantKeepAlive => true;
+}
+
+class _AnimeSelect extends StatelessWidget {
+  const _AnimeSelect({
+    required this.animes,
+    required this.onAnimeClicked,
+    required this.currentIndex,
+  });
+
+  final List<Anime> animes;
+  final Function(int) onAnimeClicked;
+  final int currentIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => _showAnimeGridDialog(context),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        color: Theme.of(context).colorScheme.surface,
+        child: Column(
+          children: [
+            Text(
+              animes[currentIndex].title,
+            ),
+            const SizedBox(height: 8),
+            CachedNetworkImage(
+              imageUrl: animes[currentIndex].imageUrl ?? "",
+              height: 200,
+              errorWidget: (context, url, error) => Container(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAnimeGridDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          elevation: 0,
+          content: SizedBox(
+            width: double.maxFinite,
+            child: GridView.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+              ),
+              itemCount: animes.length,
+              itemBuilder: (context, index) {
+                final anime = animes[index];
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    onAnimeClicked(index);
+                  },
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Expanded(
+                        child: CachedNetworkImage(
+                          imageUrl: anime.imageUrl ?? "",
+                          errorWidget: (context, url, error) =>
+                              const Icon(Icons.error),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      Text(anime.title, overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
