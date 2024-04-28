@@ -6,7 +6,6 @@ import "package:flutter_inappwebview/flutter_inappwebview.dart";
 import "package:http/http.dart" as http;
 import "package:luffy/auth.dart";
 import "package:luffy/main.dart";
-import "package:luffy/util.dart";
 
 const malRedirectUri = "https://localhost/authorize";
 
@@ -104,12 +103,8 @@ class _LoginMobileScreenState extends State<LoginMobileScreen> {
       return;
     }
 
-    final json = jsonDecode(response.body);
-
-    prints(json);
-
     final token = await MalToken.getInstance(
-      json: json,
+      json: jsonDecode(response.body),
     );
 
     if (context.mounted) {
