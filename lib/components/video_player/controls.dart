@@ -1,4 +1,5 @@
 import "dart:async";
+import "dart:math";
 
 import "package:flutter/material.dart";
 import "package:flutter_volume_controller/flutter_volume_controller.dart";
@@ -309,7 +310,8 @@ class _ControlsOverlayState extends State<ControlsOverlay> {
     final height = MediaQuery.of(context).size.height;
 
     final showControls = _showControls && !_controlsLocked;
-    final moreEpisodes = widget.episodeNum < (widget.episodes?.length ?? 0);
+    final moreEpisodes =
+        widget.episodeNum < max((widget.episodes?.length ?? 0) - 1, 0);
 
     return Center(
       child: Stack(
