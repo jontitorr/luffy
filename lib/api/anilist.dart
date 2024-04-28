@@ -398,11 +398,6 @@ class AnilistService {
         _apiUrl,
         data: params,
       );
-
-      if (res.statusCode != 200) {
-        return [];
-      }
-
       final data = res.data["data"]["Page"]["media"];
       final ret = <SearchResult>[];
 
@@ -472,11 +467,6 @@ class AnilistService {
         _apiUrl,
         data: params,
       );
-
-      if (res.statusCode != 200) {
-        return [];
-      }
-
       final data = res.data["data"]["Page"]["media"];
       final ret = <SearchResult>[];
 
