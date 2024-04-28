@@ -29,6 +29,24 @@ class Episode {
     this.isDub = false,
   });
 
+  Episode copyWith({
+    String? title,
+    String? url,
+    String? thumbnailUrl,
+    int? rating,
+    String? synopsis,
+    bool? isDub,
+  }) {
+    return Episode(
+      title: title ?? this.title,
+      url: url ?? this.url,
+      thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+      rating: rating ?? this.rating,
+      synopsis: synopsis ?? this.synopsis,
+      isDub: isDub ?? this.isDub,
+    );
+  }
+
   final String? title;
   final String url;
   final String? thumbnailUrl;

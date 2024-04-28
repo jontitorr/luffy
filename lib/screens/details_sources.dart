@@ -83,14 +83,16 @@ class _DetailsScreenSourcesState extends State<DetailsScreenSources>
 
   Future<void> _handleEpisodeSelected(
     Episode episode,
-    int idx,
     _AnimeAndEpisodes? animeInfo,
   ) async {
     if (!context.mounted || animeInfo == null) {
       return;
     }
 
-    final episodeProgress = animeInfo.episodeProgress[idx];
+    final idx = animeInfo.episodes.indexOf(episode);
+    final episodeProgress = animeInfo.episodeProgress.elementAtOrNull(
+      idx,
+    );
 
     final progress = await Navigator.of(context).push<double>(
       MaterialPageRoute(
@@ -107,6 +109,7 @@ class _DetailsScreenSourcesState extends State<DetailsScreenSources>
           episodes: animeInfo.episodes,
           sourceFetcher: (ep) => widget.extractor.getSources(ep),
           showUrl: widget.anime.url,
+          languages: const [],
         ),
       ),
     );
@@ -144,7 +147,7 @@ class _DetailsScreenSourcesState extends State<DetailsScreenSources>
     return _AnimeAndEpisodes(
       anime: anime,
       episodes: episodes,
-      episodeProgress: episodeProgress,
+      episodeProgress: episodeProgress.map((e) => e?.progress).toList(),
       totalEpisodes: widget.totalEpisodes ?? anime?.episodes ?? episodes.length,
       watchedEpisodes: widget.watchedEpisodes,
     );
@@ -173,14 +176,12 @@ class _DetailsScreenSourcesState extends State<DetailsScreenSources>
             ),
           ),
           onPressed: () async {
-            if (!context.mounted) {
-              return;
+            if (context.mounted) {
+              _handleEpisodeSelected(
+                animeInfo.episodes[recentProgress.key],
+                animeInfo,
+              );
             }
-
-            final episode = animeInfo.episodes[recentProgress.key];
-            final idx = recentProgress.key;
-
-            _handleEpisodeSelected(episode, idx, animeInfo);
           },
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -214,14 +215,12 @@ class _DetailsScreenSourcesState extends State<DetailsScreenSources>
           foregroundColor: MaterialStateProperty.all(Colors.blue),
         ),
         onPressed: () async {
-          if (!context.mounted) {
-            return;
+          if (context.mounted) {
+            _handleEpisodeSelected(
+              animeInfo.episodes[watchedEpisodes],
+              animeInfo,
+            );
           }
-
-          final episode = animeInfo.episodes[watchedEpisodes];
-          final idx = watchedEpisodes;
-
-          _handleEpisodeSelected(episode, idx, animeInfo);
         },
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -382,8 +381,8 @@ class _DetailsScreenSourcesState extends State<DetailsScreenSources>
                 watchedEpisodes: animeInfo?.watchedEpisodes ?? 0,
                 totalEpisodes:
                     animeInfo?.totalEpisodes ?? widget.totalEpisodes ?? 0,
-                onEpisodeSelected: (episode, idx) {
-                  _handleEpisodeSelected(episode, idx, animeInfo);
+                onEpisodeSelected: (episode) {
+                  _handleEpisodeSelected(episode, animeInfo);
                 },
               ),
             ],

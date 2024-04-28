@@ -3,6 +3,7 @@ import "package:flutter/material.dart";
 import "package:luffy/api/mal.dart";
 import "package:luffy/components/anime_info.dart";
 import "package:luffy/screens/details.dart";
+import "package:luffy/screens/history.dart";
 import "package:luffy/screens/search.dart";
 import "package:luffy/util.dart";
 
@@ -80,10 +81,11 @@ class _ListScreenState extends State<ListScreen>
         }
 
         final animeList = data.animeList;
+        final loggedIn = data.userInfo != null;
 
         return SafeArea(
           child: DefaultTabController(
-            length: _tabNames.length,
+            length: (loggedIn ? _tabNames.length : 0) + 1,
             child: Scaffold(
               appBar: AppBar(
                 iconTheme: Theme.of(context).iconTheme,
@@ -102,167 +104,175 @@ class _ListScreenState extends State<ListScreen>
                   ),
                 ],
                 bottom: TabBar(
-                  tabAlignment: TabAlignment.center,
+                  tabAlignment: TabAlignment.start,
                   isScrollable: true,
-                  tabs: _tabNames.map((name) {
-                    final toDisplay = (() {
-                      switch (name) {
-                        case "Watching":
-                          return animeList.watching;
-                        case "Plan to Watch":
-                          return animeList.planToWatch;
-                        case "On Hold":
-                          return animeList.onHold;
-                        case "Dropped":
-                          return animeList.dropped;
-                        case "Completed":
-                          return animeList.completed;
-                        default:
-                          throw Exception("Invalid tab name");
-                      }
-                    })();
+                  tabs: [
+                    ...(loggedIn ? _tabNames : []).map((name) {
+                      final toDisplay = (() {
+                        switch (name) {
+                          case "Watching":
+                            return animeList.watching;
+                          case "Plan to Watch":
+                            return animeList.planToWatch;
+                          case "On Hold":
+                            return animeList.onHold;
+                          case "Dropped":
+                            return animeList.dropped;
+                          case "Completed":
+                            return animeList.completed;
+                          default:
+                            throw Exception("Invalid tab name");
+                        }
+                      })();
 
-                    return Tab(
-                      text: "${name.toUpperCase()} (${toDisplay.length})",
-                    );
-                  }).toList(),
+                      return Tab(
+                        text: "${name.toUpperCase()} (${toDisplay.length})",
+                      );
+                    }),
+                    const Tab(
+                      text: "HISTORY",
+                    ),
+                  ],
                 ),
               ),
               body: TabBarView(
                 children: [
-                  animeList.watching,
-                  animeList.planToWatch,
-                  animeList.onHold,
-                  animeList.completed,
-                  animeList.dropped,
-                ]
-                    .map(
-                      (e) => CustomRefreshIndicator(
-                        builder: MaterialIndicatorDelegate(
-                          displacement: 20,
-                          builder: (context, controller) {
-                            final offset = controller.value * 0.5 * 3.1415;
+                  ...(loggedIn
+                          ? [
+                              animeList.watching,
+                              animeList.planToWatch,
+                              animeList.onHold,
+                              animeList.completed,
+                              animeList.dropped,
+                            ]
+                          : [])
+                      .map(
+                    (e) => CustomRefreshIndicator(
+                      builder: MaterialIndicatorDelegate(
+                        displacement: 20,
+                        builder: (context, controller) {
+                          final offset = controller.value * 0.5 * 3.1415;
 
-                            return Transform.rotate(
-                              angle: offset,
-                              child: Icon(
-                                Icons.refresh,
-                                color: Theme.of(context).colorScheme.primary,
-                                size: 30,
-                              ),
-                            );
-                          },
-                        ),
-                        onRefresh: () async {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("Refreshing..."),
-                              duration: Duration(milliseconds: 250),
+                          return Transform.rotate(
+                            angle: offset,
+                            child: Icon(
+                              Icons.refresh,
+                              color: Theme.of(context).colorScheme.primary,
+                              size: 30,
                             ),
                           );
-
-                          setState(() {
-                            _dataFuture = () async {
-                              final ret = await _getData();
-
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text("Refreshed!"),
-                                    duration: Duration(milliseconds: 250),
-                                  ),
-                                );
-                              }
-
-                              return ret;
-                            }();
-                          });
                         },
-                        child: ListView.builder(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          itemCount: e.length,
-                          itemBuilder: (context, index) {
-                            final anime = e[index];
+                      ),
+                      onRefresh: () async {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Refreshing..."),
+                            duration: Duration(milliseconds: 250),
+                          ),
+                        );
 
-                            return Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: GestureDetector(
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => DetailsScreen(
-                                      animeId: anime.id,
-                                      malId: anime.id,
-                                      isMalId: true,
-                                      title: anime.title,
-                                      imageUrl: anime.imageUrl,
-                                      startDate: anime.startDate,
-                                      endDate: anime.endDate,
-                                      score: anime.score,
-                                      watchedEpisodes: anime.watchedEpisodes,
-                                      totalEpisodes: anime.totalEpisodes ?? 0,
-                                      bannerImageUrl: anime.coverImageUrl,
-                                      titleRomaji: anime.titleEnJp,
-                                      onUpdate: (
-                                        score,
-                                        watchedEpisodes,
-                                        status,
-                                      ) {
-                                        setState(() {
-                                          anime.score = score;
-                                          anime.watchedEpisodes =
-                                              watchedEpisodes;
+                        setState(() {
+                          _dataFuture = () async {
+                            final ret = await _getData();
 
-                                          if (anime.status == status) {
-                                            return;
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Refreshed!"),
+                                  duration: Duration(milliseconds: 250),
+                                ),
+                              );
+                            }
+
+                            return ret;
+                          }();
+                        });
+                      },
+                      child: ListView.builder(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        itemCount: e.length,
+                        itemBuilder: (context, index) {
+                          final anime = e[index];
+
+                          return Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: GestureDetector(
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => DetailsScreen(
+                                    animeId: anime.id,
+                                    malId: anime.id,
+                                    isMalId: true,
+                                    title: anime.title,
+                                    imageUrl: anime.imageUrl,
+                                    startDate: anime.startDate,
+                                    endDate: anime.endDate,
+                                    score: anime.score,
+                                    watchedEpisodes: anime.watchedEpisodes,
+                                    totalEpisodes: anime.totalEpisodes ?? 0,
+                                    bannerImageUrl: anime.coverImageUrl,
+                                    titleRomaji: anime.titleEnJp,
+                                    onUpdate: (
+                                      score,
+                                      watchedEpisodes,
+                                      status,
+                                    ) {
+                                      setState(() {
+                                        anime.score = score;
+                                        anime.watchedEpisodes = watchedEpisodes;
+
+                                        if (anime.status == status) {
+                                          return;
+                                        }
+
+                                        final toModify = (() {
+                                          switch (anime.status) {
+                                            case AnimeListStatus.watching:
+                                              return animeList.watching;
+                                            case AnimeListStatus.planToWatch:
+                                              return animeList.planToWatch;
+                                            case AnimeListStatus.onHold:
+                                              return animeList.onHold;
+                                            case AnimeListStatus.completed:
+                                              return animeList.completed;
+                                            case AnimeListStatus.dropped:
+                                              return animeList.dropped;
                                           }
+                                        })();
 
-                                          final toModify = (() {
-                                            switch (anime.status) {
-                                              case AnimeListStatus.watching:
-                                                return animeList.watching;
-                                              case AnimeListStatus.planToWatch:
-                                                return animeList.planToWatch;
-                                              case AnimeListStatus.onHold:
-                                                return animeList.onHold;
-                                              case AnimeListStatus.completed:
-                                                return animeList.completed;
-                                              case AnimeListStatus.dropped:
-                                                return animeList.dropped;
-                                            }
-                                          })();
+                                        final toAdd = (() {
+                                          switch (status) {
+                                            case AnimeListStatus.watching:
+                                              return animeList.watching;
+                                            case AnimeListStatus.planToWatch:
+                                              return animeList.planToWatch;
+                                            case AnimeListStatus.onHold:
+                                              return animeList.onHold;
+                                            case AnimeListStatus.completed:
+                                              return animeList.completed;
+                                            case AnimeListStatus.dropped:
+                                              return animeList.dropped;
+                                          }
+                                        })();
 
-                                          final toAdd = (() {
-                                            switch (status) {
-                                              case AnimeListStatus.watching:
-                                                return animeList.watching;
-                                              case AnimeListStatus.planToWatch:
-                                                return animeList.planToWatch;
-                                              case AnimeListStatus.onHold:
-                                                return animeList.onHold;
-                                              case AnimeListStatus.completed:
-                                                return animeList.completed;
-                                              case AnimeListStatus.dropped:
-                                                return animeList.dropped;
-                                            }
-                                          })();
-
-                                          toModify.remove(anime);
-                                          toAdd.insert(0, anime);
-                                          anime.status = status;
-                                        });
-                                      },
-                                    ),
+                                        toModify?.remove(anime);
+                                        toAdd.insert(0, anime);
+                                        anime.status = status;
+                                      });
+                                    },
                                   ),
                                 ),
-                                child: AnimeInfo(anime: anime),
                               ),
-                            );
-                          },
-                        ),
+                              child: AnimeInfo(anime: anime),
+                            ),
+                          );
+                        },
                       ),
-                    )
-                    .toList(),
+                    ),
+                  ),
+                  const HistoryScreen(),
+                ],
               ),
             ),
           ),

@@ -11,8 +11,9 @@ import "package:url_launcher/url_launcher.dart";
 class DetailsScreen extends StatefulWidget {
   const DetailsScreen({
     super.key,
-    required this.animeId,
+    this.animeId,
     this.malId,
+    this.showId,
     required this.title,
     this.imageUrl,
     this.startDate,
@@ -27,8 +28,9 @@ class DetailsScreen extends StatefulWidget {
     this.isMalId = false,
   });
 
-  final int animeId;
+  final int? animeId;
   final int? malId;
+  final String? showId;
   final String title;
   final String? imageUrl;
   final DateTime? startDate;
@@ -93,8 +95,15 @@ class _DetailsScreenState extends State<DetailsScreen>
   Future<AnimeStats?> _getAnimeInfo({
     bool firstTime = false,
   }) async {
+    final info = widget.animeId != null
+        ? await AnilistService.getAnimeInfo(
+            widget.animeId!,
+            isMalId: widget.isMalId,
+          )
+        : null;
+
     final listStatus = await (() async {
-      final malId = widget.malId;
+      final malId = widget.malId ?? info?.malId;
 
       if ((malId == null) ||
           (widget.score != null &&
@@ -106,11 +115,6 @@ class _DetailsScreenState extends State<DetailsScreen>
 
       return mal.MalService.getListStatusFor(malId);
     })();
-
-    final info = await AnilistService.getAnimeInfo(
-      widget.animeId,
-      isMalId: widget.isMalId,
-    );
 
     return AnimeStats(
       isLoggedIn: await mal.MalService.isLoggedIn(),
@@ -180,9 +184,11 @@ class _DetailsScreenState extends State<DetailsScreen>
 
     final watch = WatchScreen(
       animeId: widget.animeId,
+      showId: widget.showId,
       title: widget.title,
       watchedEpisodes: animeInfo?.watchedEpisodes ?? 0,
       totalEpisodes: animeInfo?.totalEpisodes ?? 0,
+      languages: animeInfo?.anime?.languages ?? [],
     );
 
     return Scaffold(

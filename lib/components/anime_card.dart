@@ -29,7 +29,7 @@ class AnimeCard extends StatelessWidget {
                   builder: (context) => DetailsScreen(
                     animeId: anime.id,
                     malId: anime.malId,
-                    title: anime.titleUserPreferred,
+                    title: anime.titleEnglish ?? anime.titleUserPreferred,
                     imageUrl: anime.coverImage,
                     bannerImageUrl: anime.bannerImage,
                     titleRomaji: anime.titleRomaji,
@@ -38,21 +38,9 @@ class AnimeCard extends StatelessWidget {
                 ),
               )
           : null,
-      child: Container(
+      child: SizedBox(
         width: width,
         height: height,
-        decoration: const BoxDecoration(
-            // border: Border.all(
-            //   color: Colors.red,
-            // ),
-            // boxShadow: [
-            //   BoxShadow(
-            //     color: Theme.of(context).colorScheme.primary.withOpacity(.6),
-            //     blurRadius: 8,
-            //     spreadRadius: -10,
-            //   )
-            // ],
-            ),
         child: Column(
           children: [
             Flexible(
@@ -72,11 +60,9 @@ class AnimeCard extends StatelessWidget {
                           height: height,
                           fit: BoxFit.cover,
                         ),
-                        // Score shown in bottom right of card with rounded/elipctical borders.
                         Positioned(
                           bottom: 0,
                           right: 0,
-                          // child should be the score with a primary color background and the should be rounded.
                           child: Container(
                             decoration: BoxDecoration(
                               color: Theme.of(context).colorScheme.primary,
@@ -113,7 +99,6 @@ class AnimeCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  // green circle on bottom left if the status is "RELEASING"
                   if (anime.status == "RELEASING")
                     Positioned(
                       bottom: 0,
@@ -134,7 +119,7 @@ class AnimeCard extends StatelessWidget {
               const SizedBox(height: 8),
               Flexible(
                 child: Text(
-                  anime.titleUserPreferred,
+                  anime.titleEnglish ?? anime.titleUserPreferred,
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,

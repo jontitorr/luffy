@@ -23,6 +23,7 @@ class VideoPlayerScreen extends StatefulWidget {
     required this.sourceFetcher,
     this.animeId,
     required this.showUrl,
+    required this.languages,
   });
 
   final String showId;
@@ -36,6 +37,7 @@ class VideoPlayerScreen extends StatefulWidget {
   final Future<List<VideoSource>> Function(Episode) sourceFetcher;
   final int? animeId;
   final String showUrl;
+  final List<String> languages;
 
   @override
   State<VideoPlayerScreen> createState() => _VideoPlayerScreenState();
@@ -52,7 +54,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   Duration _position = Duration.zero;
   double _speed = 1.0;
   bool _hasResumed = false;
-  VideoSource? _currentSource;
+  int _currentSourceIdx = 0;
   List<VideoSource>? _sources;
   Subtitle? _currentSubtitle;
   List<Subtitle?>? _subtitles;
@@ -108,16 +110,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     });
   }
 
-  void _onSourceChanged(VideoSource source) {
+  Future<void> _onSourceChanged(VideoSource source) async {
     prints("VideoPlayer source changed to ${source.description}");
 
-    _player.open(
-      Media(
-        source.videoUrl,
-      ),
-    );
+    await _player.jump(_sources?.indexOf(source) ?? 0);
 
     setState(() {
+      _currentSourceIdx = _sources?.indexOf(source) ?? 0;
       _positionBeforeSourceChange = _position;
       _hasResumedFromSourceChange = false;
     });
@@ -182,7 +181,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       }
 
       setState(() {
-        _currentSource = sources.first;
+        _currentSourceIdx = 0;
         _currentSubtitle = sources.first.subtitle;
 
         if (_currentSubtitle != null) {
@@ -194,11 +193,22 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         _isRequestInProgress = false;
       });
 
-      _player.open(
-        Media(
-          sources[0].videoUrl,
-        ),
-      );
+      _player.stop().then((e) {
+        _player.open(
+          Playlist(
+            _sources
+                    ?.map(
+                      (it) => Media(
+                        it.videoUrl,
+                        httpHeaders: it.headers,
+                      ),
+                    )
+                    .toList() ??
+                [],
+            index: _currentSourceIdx,
+          ),
+        );
+      });
     });
   }
 
@@ -220,7 +230,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         id: widget.showId,
         animeId: widget.animeId,
         title: widget.showTitle,
-        imageUrl: currentEpisode.thumbnailUrl ?? widget.imageUrl,
+        imageUrl: widget.imageUrl,
         progress: {},
         totalEpisodes: widget.episodes.length,
         sources: {
@@ -231,9 +241,14 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         },
         sourceExpiration: DateTime.now().add(const Duration(hours: 1)),
         showUrl: widget.showUrl,
+        languages: widget.languages,
       ),
-      _currentEpisodeNum,
-      progress,
+      EpisodeEntry(
+        episodeNum: _currentEpisodeNum,
+        progress: progress,
+        title: currentEpisode.title ?? "Episode $_currentEpisodeNum",
+        thumbnailUrl: currentEpisode.thumbnailUrl,
+      ),
     );
 
     prints(
@@ -299,7 +314,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
       setState(() {
         _currentEpisodeNum = widget.episodeNum;
-        _currentSource = sources.first;
         _currentSubtitle = sources.first.subtitle;
 
         if (_currentSubtitle != null) {
@@ -353,61 +367,64 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       });
 
       _player.stream.buffer.listen((event) {
-        if (!mounted) {
-          return;
+        if (mounted) {
+          setState(() {
+            _buffered = event;
+          });
         }
-
-        setState(() {
-          _buffered = event;
-        });
       });
 
       _player.stream.duration.listen((event) {
-        if (!mounted) {
-          return;
+        if (mounted) {
+          setState(() {
+            _duration = event;
+          });
         }
-
-        setState(() {
-          _duration = event;
-        });
       });
 
       _player.stream.playing.listen((event) {
-        if (!mounted) {
-          return;
+        if (mounted) {
+          setState(() {
+            _isPlaying = event;
+          });
         }
-
-        setState(() {
-          _isPlaying = event;
-        });
       });
 
       _player.stream.position.listen((event) {
-        if (!mounted) {
-          return;
+        if (mounted) {
+          setState(() {
+            _position = event;
+          });
         }
-
-        setState(() {
-          _position = event;
-        });
       });
 
       _player.stream.rate.listen((event) {
-        if (!mounted) {
-          return;
+        if (mounted) {
+          setState(() {
+            _speed = event;
+          });
         }
+      });
 
-        setState(() {
-          _speed = event;
-        });
+      _player.stream.playlist.listen((event) {
+        if (mounted) {
+          setState(() {
+            _currentSourceIdx = event.index;
+          });
+        }
       });
 
       prints("VideoPlayer source changed to ${sources.first.videoUrl}");
 
-      await _player.open(
+      _player.open(
         Playlist(
-          sources
-              .mapNotNull((it) => Media(it.videoUrl, httpHeaders: it.headers)),
+          sources.mapNotNull(
+            (it) => Media(
+              it.videoUrl,
+              httpHeaders: it.headers,
+            ),
+          ),
+          index: _currentSourceIdx,
         ),
       );
     });
@@ -471,7 +488,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                   onFitChanged: _onFitChanged,
                   onSpeedChanged: _onSpeedChanged,
                   episodes: widget.episodes,
-                  source: _currentSource,
+                  sourceIdx: _currentSourceIdx,
                   sources: _sources,
                   onSourceChanged: _onSourceChanged,
                   onSubtitleChanged: _onSubtitleChanged,

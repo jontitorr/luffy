@@ -25,7 +25,7 @@ class EpisodeList extends StatefulWidget {
   final List<kitsu.Episode> episodeInfoKitsu;
   final int watchedEpisodes;
   final int totalEpisodes;
-  final void Function(Episode, int) onEpisodeSelected;
+  final void Function(Episode) onEpisodeSelected;
 
   @override
   State<EpisodeList> createState() => _EpisodeListState();
@@ -297,7 +297,6 @@ class _EpisodeListState extends State<EpisodeList> {
                           onTap: () {
                             widget.onEpisodeSelected(
                               episode,
-                              _startIndex + e.key,
                             );
                           },
                           splashColor: Colors.grey,

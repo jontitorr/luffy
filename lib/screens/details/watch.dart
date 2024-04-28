@@ -1,4 +1,5 @@
 import "package:cached_network_image/cached_network_image.dart";
+import "package:collection/collection.dart";
 import "package:flutter/material.dart";
 import "package:luffy/api/anime.dart";
 import "package:luffy/api/history.dart";
@@ -29,16 +30,20 @@ class _Data {
 class WatchScreen extends StatefulWidget {
   const WatchScreen({
     super.key,
-    required this.animeId,
+    this.animeId,
+    this.showId,
     required this.title,
     required this.watchedEpisodes,
     required this.totalEpisodes,
+    required this.languages,
   });
 
-  final int animeId;
+  final int? animeId;
+  final String? showId;
   final String title;
   final int? watchedEpisodes;
   final int? totalEpisodes;
+  final List<String> languages;
 
   @override
   State<WatchScreen> createState() => _WatchScreenState();
@@ -66,7 +71,9 @@ class _WatchScreenState extends State<WatchScreen>
   }
 
   Future<_Data?> _getData(bool firstTime) async {
-    final thumb = await kitsu.KituService.search(widget.animeId);
+    final animeId = widget.animeId;
+    final thumb =
+        animeId != null ? await kitsu.KituService.search(animeId) : null;
     final anime = await _getAnime(firstTime);
 
     if (anime == null) {
@@ -79,19 +86,17 @@ class _WatchScreenState extends State<WatchScreen>
       return null;
     }
 
-    final history =
-        await HistoryService.getMedia("${_extractor.name}-${widget.animeId}");
-
-    prints(
-      "History for ${_extractor.name}-${widget.animeId}: ${history?.toJson()}",
-    );
+    final history = widget.showId != null
+        ? await HistoryService.getMedia(widget.showId!)
+        : null;
 
     return _Data(
       anime: anime,
-      info: await mal.MalService.getAnimeEpisodes(widget.animeId),
-      moreInfo: thumb,
+      info:
+          animeId != null ? await mal.MalService.getAnimeEpisodes(animeId) : [],
+      moreInfo: thumb ?? [],
       episodes: episodes,
-      progress: history?.progress ?? {},
+      progress: history?.progress.map((k, v) => MapEntry(k, v.progress)) ?? {},
     );
   }
 
@@ -174,13 +179,8 @@ class _WatchScreenState extends State<WatchScreen>
           ),
           onPressed: () async {
             if (!context.mounted) {
-              return;
+              _handleEpisodeSelected(data.episodes[recentProgress.key], data);
             }
-
-            final episode = data.episodes[recentProgress.key];
-            final idx = recentProgress.key;
-
-            _handleEpisodeSelected(episode, idx, data);
           },
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -214,14 +214,9 @@ class _WatchScreenState extends State<WatchScreen>
           foregroundColor: MaterialStateProperty.all(Colors.blue),
         ),
         onPressed: () async {
-          if (!context.mounted) {
-            return;
+          if (context.mounted) {
+            _handleEpisodeSelected(data.episodes[watchedEpisodes], data);
           }
-
-          final episode = data.episodes[watchedEpisodes];
-          final idx = watchedEpisodes;
-
-          _handleEpisodeSelected(episode, idx, data);
         },
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -272,29 +267,41 @@ class _WatchScreenState extends State<WatchScreen>
 
   Future<void> _handleEpisodeSelected(
     Episode episode,
-    int idx,
     _Data data,
   ) async {
     if (!context.mounted) {
       return;
     }
 
-    final episodeProgress = data.progress[idx];
+    final filtered = _filterEpisodes(data.episodes);
+    final idx = filtered.indexOf(episode);
+    final episodeProgress =
+        data.progress.entries.firstWhereOrNull((e) => e.key == idx)?.value;
+    final moreInfo = data.moreInfo.elementAtOrNull(idx);
+    final episodes = filtered
+        .map(
+          (e) => e.copyWith(
+            title: moreInfo?.title,
+            thumbnailUrl: moreInfo?.image,
+          ),
+        )
+        .toList();
 
     final progress = await Navigator.of(context).push<double>(
       MaterialPageRoute(
         builder: (_) => VideoPlayerScreen(
-          showId: "${_extractor.name}-${widget.animeId}",
+          showId: widget.showId ?? "${_extractor.name}-${widget.animeId}",
           showTitle: widget.title,
-          episode: episode,
+          episode: episodes[idx],
           episodeNum: idx,
           sourceName: _extractor.name,
           savedProgress: episodeProgress,
-          imageUrl: episode.thumbnailUrl ?? data.anime.imageUrl,
-          episodes: data.episodes,
+          imageUrl: data.anime.imageUrl,
+          episodes: episodes,
           sourceFetcher: (ep) => _extractor.getSources(ep),
           animeId: widget.animeId,
           showUrl: data.anime.url,
+          languages: widget.languages,
         ),
       ),
     );
@@ -412,10 +419,9 @@ class _WatchScreenState extends State<WatchScreen>
                   episodeProgress: data.progress,
                   watchedEpisodes: widget.watchedEpisodes ?? 0,
                   totalEpisodes: widget.totalEpisodes ?? 0,
-                  onEpisodeSelected: (ep, idx) {
+                  onEpisodeSelected: (ep) {
                     _handleEpisodeSelected(
                       ep,
-                      idx,
                       data,
                     );
                   },

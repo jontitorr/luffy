@@ -39,7 +39,7 @@ class ControlsOverlay extends StatefulWidget {
     required this.onSpeedChanged,
     required this.onSubtitleOffsetChanged,
     required this.episodes,
-    required this.source,
+    required this.sourceIdx,
     required this.sources,
     required this.onSourceChanged,
     required this.onSubtitleChanged,
@@ -70,7 +70,7 @@ class ControlsOverlay extends StatefulWidget {
   final ValueChanged<double> onSpeedChanged;
   final ValueChanged<double> onSubtitleOffsetChanged;
   final List<Episode>? episodes;
-  final VideoSource? source;
+  final int sourceIdx;
   final List<VideoSource>? sources;
   final ValueChanged<VideoSource> onSourceChanged;
   final ValueChanged<Subtitle?> onSubtitleChanged;
@@ -521,7 +521,7 @@ class _ControlsOverlayState extends State<ControlsOverlay> {
                                   ),
                                   if (widget.sources != null)
                                     VideoPlayerSourceIcon(
-                                      source: widget.source!,
+                                      source: widget.sources![widget.sourceIdx],
                                       sources: widget.sources!,
                                       subtitle: widget.subtitle,
                                       subtitles: widget.subtitles,
@@ -553,7 +553,7 @@ class _ControlsOverlayState extends State<ControlsOverlay> {
                         child: Column(
                           children: [
                             Text(
-                              "${widget.sourceName} source ${widget.episodeNum + 1} - ${widget.size.width.round()}x${widget.size.height.round()}",
+                              "${widget.sourceName} source ${widget.sourceIdx + 1} - ${widget.size.width.round()}x${widget.size.height.round()}",
                               style: const TextStyle(
                                 color: Colors.white,
                               ),

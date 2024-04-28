@@ -6,6 +6,46 @@ import "package:flutter_secure_storage/flutter_secure_storage.dart";
 import "package:luffy/api/anime.dart";
 import "package:luffy/util.dart";
 
+class EpisodeEntry {
+  EpisodeEntry({
+    required this.episodeNum,
+    required this.progress,
+    required this.title,
+    this.thumbnailUrl,
+  });
+
+  EpisodeEntry.fromJson(Map<String, dynamic> json)
+      : episodeNum = json["episode_num"],
+        progress = json["progress"],
+        title = json["title"],
+        thumbnailUrl = json["thumbnail_url"];
+
+  EpisodeEntry copyWith({
+    int? episodeNum,
+    double? progress,
+    String? title,
+  }) {
+    return EpisodeEntry(
+      episodeNum: episodeNum ?? this.episodeNum,
+      progress: progress ?? this.progress,
+      title: title ?? this.title,
+      thumbnailUrl: thumbnailUrl,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        "episode_num": episodeNum,
+        "progress": progress,
+        "title": title,
+        "thumbnail_url": thumbnailUrl,
+      };
+
+  final int episodeNum;
+  final double progress;
+  final String title;
+  final String? thumbnailUrl;
+}
+
 class HistoryEntry {
   HistoryEntry({
     required this.id,
@@ -18,6 +58,7 @@ class HistoryEntry {
     required this.subtitles,
     required this.sourceExpiration,
     required this.showUrl,
+    required this.languages,
   });
 
   HistoryEntry.fromJson(Map<String, dynamic> json)
@@ -25,12 +66,19 @@ class HistoryEntry {
         animeId = json["anime_id"],
         title = json["title"],
         imageUrl = json["image_url"],
-        progress = json["progress"],
+        progress = json["progress"]
+            .map((k, v) => MapEntry(int.parse(k), EpisodeEntry.fromJson(v))),
         totalEpisodes = json["total_episodes"],
-        sources = json["sources"],
-        subtitles = json["subtitles"],
+        sources = json["sources"].map(
+          (k, v) =>
+              MapEntry(int.parse(k), v.map((e) => VideoSource.fromJson(e))),
+        ),
+        subtitles = json["subtitles"].map(
+          (k, v) => MapEntry(int.parse(k), v.map((e) => Subtitle.fromJson(e))),
+        ),
         sourceExpiration = DateTime.parse(json["sources_last_updated"]),
-        showUrl = json["show_url"];
+        showUrl = json["show_url"],
+        languages = json["languages"];
 
   // The ID of the anime (if a normie show/movie will be formatted like so: "$sourceName-$showId")
   final String id;
@@ -41,7 +89,7 @@ class HistoryEntry {
   // The image URL of the anime/show/movie
   final String? imageUrl;
   // The stored progress of the media (is indexed by the episode number)
-  final Map<int, double> progress;
+  final Map<int, EpisodeEntry> progress;
   // The total number of episodes of the media
   final int totalEpisodes;
   // Sources for the media, all serialized to JSON.
@@ -52,6 +100,8 @@ class HistoryEntry {
   final DateTime sourceExpiration;
   // The URL of the original show it belongs to (useful for looking up episodes again if needed)
   final String showUrl;
+  // The languages the show is available in
+  final List<String> languages;
 
   Map<String, dynamic> toJson() {
     return {
@@ -59,19 +109,13 @@ class HistoryEntry {
       "anime_id": animeId,
       "title": title,
       "image_url": imageUrl,
-      "progress": progress.map((key, value) => MapEntry(key.toString(), value)),
+      "progress": progress.map((k, v) => MapEntry(k.toString(), v.toJson())),
       "total_episodes": totalEpisodes,
       "sources": sources.map(
-        (key, value) => MapEntry(
-          key.toString(),
-          value.map((e) => e.toJson()).toList(),
-        ),
+        (k, v) => MapEntry(k.toString(), v.map((e) => e.toJson()).toList()),
       ),
       "subtitles": subtitles.map(
-        (key, value) => MapEntry(
-          key.toString(),
-          value.map((e) => e.toJson()).toList(),
-        ),
+        (k, v) => MapEntry(k.toString(), v.map((e) => e.toJson()).toList()),
       ),
       "source_expiration": sourceExpiration.toIso8601String(),
       "show_url": showUrl,
@@ -90,7 +134,7 @@ class HistoryService {
 
   static Future<HistoryService> _getInstance() async {
     // TODO(xminent): Debug delete.
-    // await _storage.delete(key: "history");
+    await _storage.delete(key: "history");
 
     if (_instance != null) {
       return _instance!;
@@ -109,13 +153,8 @@ class HistoryService {
                   animeId: e["anime_id"],
                   title: e["title"],
                   imageUrl: e["image_url"],
-                  progress: e["progress"] != null
-                      ? Map.fromEntries(
-                          (e["progress"] as Map<String, dynamic>).entries.map(
-                                (e) => MapEntry(int.parse(e.key), e.value),
-                              ),
-                        )
-                      : {},
+                  progress:
+                      e["progress"] ?? [].map((e) => EpisodeEntry.fromJson(e)),
                   totalEpisodes: e["total_episodes"],
                   sources: e["sources"] != null
                       ? Map.fromEntries(
@@ -143,6 +182,7 @@ class HistoryService {
                       : {},
                   sourceExpiration: DateTime.parse(e["source_expiration"]),
                   showUrl: e["show_url"],
+                  languages: e["languages"] ?? [],
                 ),
               )
               .toList()
@@ -164,8 +204,7 @@ class HistoryService {
 
   static Future<void> addProgress(
     HistoryEntry media,
-    int episodeNum,
-    double progress,
+    EpisodeEntry episode,
   ) async {
     final instance = await _getInstance();
     final history = instance._history;
@@ -185,9 +224,9 @@ class HistoryService {
     // Update the media.
     // Get the element from the history.
     final element = history[idx];
-
+    final episodeNum = episode.episodeNum;
     // Update the progress.
-    element.progress[episodeNum] = progress;
+    element.progress[episodeNum] = episode;
     // Update the sources.
     element.sources[episodeNum] = media.sources[episodeNum]!;
     // Update the subtitles.
@@ -199,7 +238,7 @@ class HistoryService {
 
     _storage.write(
       key: "history",
-      value: jsonEncode(history.map((e) => e.toJson()).toList()),
+      value: jsonEncode(history),
     );
 
     // Print the current history.

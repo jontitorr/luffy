@@ -200,6 +200,7 @@ class _AnimeBrowserState extends State<AnimeBrowser> {
                                 ),
                               ],
                               showUrl: "",
+                              languages: const [],
                             ),
                           ),
                         );
