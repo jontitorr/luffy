@@ -30,10 +30,12 @@ class _SearchScreenState extends State<SearchScreen>
             decoration: InputDecoration(
               hintText: "Search",
               border: InputBorder.none,
-              suffixIcon: IconButton(
-                onPressed: _controller.clear,
-                icon: const Icon(Icons.clear),
-              ),
+              suffixIcon: _controller.text.isNotEmpty
+                  ? IconButton(
+                      onPressed: _controller.clear,
+                      icon: const Icon(Icons.clear),
+                    )
+                  : null,
             ),
             onChanged: (value) {
               if (value.isEmpty) {
