@@ -5,6 +5,7 @@ import "dart:math";
 
 import "package:color_log/color_log.dart";
 import "package:flutter/foundation.dart";
+import "package:flutter/material.dart";
 
 dynamic tryJsonDecode(String? s) {
   if (s == null) {
@@ -236,4 +237,23 @@ extension ChunkedList<T> on List<T> {
 
     return ret;
   }
+}
+
+Route createRoute(Widget page) {
+  return PageRouteBuilder(
+    pageBuilder: (context, animation, secondaryAnimation) => page,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      const begin = Offset(1.0, 0.0);
+      const end = Offset.zero;
+      const curve = Curves.ease;
+
+      final tween =
+          Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+
+      return SlideTransition(
+        position: animation.drive(tween),
+        child: child,
+      );
+    },
+  );
 }

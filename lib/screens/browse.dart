@@ -8,6 +8,8 @@ import "package:luffy/components/parallax_container.dart";
 import "package:luffy/screens/browse_all.dart";
 import "package:luffy/screens/details.dart";
 import "package:luffy/screens/details/calen.dart";
+import "package:luffy/screens/search.dart";
+import "package:luffy/util.dart";
 
 DateTime _nextSeasonStartDate() {
   final now = DateTime.now();
@@ -60,6 +62,17 @@ class _BrowseScreenState extends State<BrowseScreen>
       child: Scaffold(
         appBar: AppBar(
           title: const Text("Browse"),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.search),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  createRoute(const SearchScreen()),
+                );
+              },
+            ),
+          ],
         ),
         floatingActionButton: AnimatedOpacity(
           duration: const Duration(milliseconds: 200),

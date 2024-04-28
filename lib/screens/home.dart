@@ -3,7 +3,6 @@ import "package:flutter/services.dart";
 import "package:luffy/screens/browse.dart";
 import "package:luffy/screens/history.dart";
 import "package:luffy/screens/list.dart";
-import "package:luffy/screens/search.dart";
 import "package:luffy/screens/search_sources.dart";
 import "package:luffy/screens/settings.dart";
 
@@ -21,9 +20,8 @@ class _HomeScreenState extends State<HomeScreen>
 
   final List<Widget> _tabs = [
     const ListScreen(),
-    const HomeScreenInner(),
+    const HistoryScreen(),
     const BrowseScreen(),
-    const SearchScreen(),
     const SearchScreenSources(),
     const SettingsScreen(),
   ];
@@ -107,10 +105,6 @@ class _HomeScreenState extends State<HomeScreen>
           BottomNavigationBarItem(
             icon: Icon(Icons.grid_view),
             label: "Browse",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: "Search",
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.tv),

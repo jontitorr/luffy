@@ -3,6 +3,8 @@ import "package:flutter/material.dart";
 import "package:luffy/api/mal.dart";
 import "package:luffy/components/anime_info.dart";
 import "package:luffy/screens/details.dart";
+import "package:luffy/screens/search.dart";
+import "package:luffy/util.dart";
 
 class _Data {
   _Data({
@@ -88,6 +90,17 @@ class _ListScreenState extends State<ListScreen>
                 title: const Text(
                   "My Lists",
                 ),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.search),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        createRoute(const SearchScreen()),
+                      );
+                    },
+                  ),
+                ],
                 bottom: TabBar(
                   tabAlignment: TabAlignment.center,
                   isScrollable: true,

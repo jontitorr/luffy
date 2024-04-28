@@ -12,6 +12,7 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen>
     with AutomaticKeepAliveClientMixin {
+  final _controller = TextEditingController();
   final _debouncer = Debouncer(delay: const Duration(milliseconds: 500));
   Future<List<SearchResult>?>? _searchResultsFuture;
 
@@ -22,41 +23,44 @@ class _SearchScreenState extends State<SearchScreen>
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          title: const Text("Search"),
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          titleSpacing: 0,
+          title: TextField(
+            controller: _controller,
+            decoration: InputDecoration(
+              hintText: "Search",
+              border: InputBorder.none,
+              suffixIcon: IconButton(
+                onPressed: _controller.clear,
+                icon: const Icon(Icons.clear),
+              ),
+            ),
+            onChanged: (value) {
+              if (value.isEmpty) {
+                return;
+              }
+
+              _debouncer(() {
+                setState(() {
+                  _searchResultsFuture = AnilistService.search(value);
+                });
+              });
+            },
+            onSubmitted: (value) {
+              if (value.isEmpty) {
+                return;
+              }
+
+              setState(() {
+                _searchResultsFuture = AnilistService.search(value);
+              });
+            },
+          ),
         ),
         body: Container(
           padding: const EdgeInsets.all(8),
           child: Column(
             children: [
-              Flexible(
-                child: TextField(
-                  decoration: const InputDecoration(
-                    hintText: "search for an anime e.g one piece",
-                    prefixIcon: Icon(Icons.search),
-                  ),
-                  onChanged: (value) {
-                    if (value.isEmpty) {
-                      return;
-                    }
-
-                    _debouncer(() {
-                      setState(() {
-                        _searchResultsFuture = AnilistService.search(value);
-                      });
-                    });
-                  },
-                  onSubmitted: (value) {
-                    if (value.isEmpty) {
-                      return;
-                    }
-
-                    setState(() {
-                      _searchResultsFuture = AnilistService.search(value);
-                    });
-                  },
-                ),
-              ),
-              const SizedBox(height: 8),
               Flexible(
                 flex: 10,
                 child: SizedBox(
