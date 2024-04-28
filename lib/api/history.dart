@@ -66,19 +66,46 @@ class HistoryEntry {
         animeId = json["anime_id"],
         title = json["title"],
         imageUrl = json["image_url"],
-        progress = json["progress"]
-            .map((k, v) => MapEntry(int.parse(k), EpisodeEntry.fromJson(v))),
+        progress = Map.fromEntries(
+          (json["progress"] as Map<String, dynamic>)
+              .entries
+              .map<MapEntry<int, EpisodeEntry>>(
+                (e) => MapEntry(
+                  int.parse(e.key),
+                  EpisodeEntry.fromJson(e.value),
+                ),
+              ),
+        ),
         totalEpisodes = json["total_episodes"],
-        sources = json["sources"].map(
-          (k, v) =>
-              MapEntry(int.parse(k), v.map((e) => VideoSource.fromJson(e))),
+        sources = Map.fromEntries(
+          (json["sources"] as Map<String, dynamic>)
+              .entries
+              .map<MapEntry<int, List<VideoSource>>>(
+                (e) => MapEntry(
+                  int.parse(e.key),
+                  (e.value as List)
+                      .map((e) => VideoSource.fromJson(e))
+                      .toList(),
+                ),
+              )
+              .toList(),
         ),
-        subtitles = json["subtitles"].map(
-          (k, v) => MapEntry(int.parse(k), v.map((e) => Subtitle.fromJson(e))),
+        subtitles = Map.fromEntries(
+          (json["subtitles"] as Map<String, dynamic>)
+              .entries
+              .map<MapEntry<int, List<Subtitle>>>(
+                (e) => MapEntry(
+                  int.parse(e.key),
+                  (e.value as List).map((e) => Subtitle.fromJson(e)).toList(),
+                ),
+              )
+              .toList(),
         ),
-        sourceExpiration = DateTime.parse(json["sources_last_updated"]),
+        sourceExpiration = DateTime.parse(json["source_expiration"]),
         showUrl = json["show_url"],
-        languages = json["languages"];
+        languages = List.from(
+          (json["languages"] as List<dynamic>).whereType<String>(),
+        );
 
   // The ID of the anime (if a normie show/movie will be formatted like so: "$sourceName-$showId")
   final String id;
@@ -119,6 +146,7 @@ class HistoryEntry {
       ),
       "source_expiration": sourceExpiration.toIso8601String(),
       "show_url": showUrl,
+      "languages": languages,
     };
   }
 }
@@ -145,42 +173,7 @@ class HistoryService {
       final history = historyStr != null
           ? (jsonDecode(historyStr) as List)
               .map(
-                (e) => HistoryEntry(
-                  id: e["id"],
-                  animeId: e["anime_id"],
-                  title: e["title"],
-                  imageUrl: e["image_url"],
-                  progress:
-                      e["progress"] ?? [].map((e) => EpisodeEntry.fromJson(e)),
-                  totalEpisodes: e["total_episodes"],
-                  sources: e["sources"] != null
-                      ? Map.fromEntries(
-                          (e["sources"] as Map<String, dynamic>).entries.map(
-                                (e) => MapEntry(
-                                  int.parse(e.key),
-                                  (e.value as List)
-                                      .map((e) => VideoSource.fromJson(e))
-                                      .toList(),
-                                ),
-                              ),
-                        )
-                      : {},
-                  subtitles: e["subtitles"] != null
-                      ? Map.fromEntries(
-                          (e["subtitles"] as Map<String, dynamic>).entries.map(
-                                (e) => MapEntry(
-                                  int.parse(e.key),
-                                  (e.value as List)
-                                      .map((e) => Subtitle.fromJson(e))
-                                      .toList(),
-                                ),
-                              ),
-                        )
-                      : {},
-                  sourceExpiration: DateTime.parse(e["source_expiration"]),
-                  showUrl: e["show_url"],
-                  languages: e["languages"] ?? [],
-                ),
+                (e) => HistoryEntry.fromJson(e),
               )
               .toList()
           : <HistoryEntry>[];
