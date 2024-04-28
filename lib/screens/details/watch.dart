@@ -179,7 +179,10 @@ class _WatchScreenState extends State<WatchScreen>
           ),
           onPressed: () async {
             if (!context.mounted) {
-              _handleEpisodeSelected(data.episodes[recentProgress.key], data);
+              _handleEpisodeSelected(
+                _filterEpisodes(data.episodes)[recentProgress.key],
+                data,
+              );
             }
           },
           child: Row(
@@ -215,7 +218,10 @@ class _WatchScreenState extends State<WatchScreen>
         ),
         onPressed: () async {
           if (context.mounted) {
-            _handleEpisodeSelected(data.episodes[watchedEpisodes], data);
+            _handleEpisodeSelected(
+              _filterEpisodes(data.episodes)[watchedEpisodes],
+              data,
+            );
           }
         },
         child: Row(
