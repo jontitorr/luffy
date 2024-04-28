@@ -610,6 +610,12 @@ class _ControlsOverlayState extends State<ControlsOverlay> {
       return;
     }
 
+    // Ignore touches that come from the edges of the screen.
+    if (details.globalPosition.dy < 0.2 * MediaQuery.of(context).size.height ||
+        details.globalPosition.dy > 0.8 * MediaQuery.of(context).size.height) {
+      return;
+    }
+
     if (details.globalPosition.dx < MediaQuery.of(context).size.width / 2) {
       setState(() {
         _brightnessVisible = true;
@@ -626,6 +632,13 @@ class _ControlsOverlayState extends State<ControlsOverlay> {
       return;
     }
 
+    if ((details.globalPosition.dy < 0.2 * MediaQuery.of(context).size.height ||
+            details.globalPosition.dy >
+                0.8 * MediaQuery.of(context).size.height) &&
+        !_brightnessVisible) {
+      return;
+    }
+
     final screenHalfWidth = MediaQuery.of(context).size.width / 2;
     final screenHalfHeight = MediaQuery.of(context).size.height / 2;
 
@@ -633,12 +646,14 @@ class _ControlsOverlayState extends State<ControlsOverlay> {
       setState(() {
         _brightness =
             (_brightness - details.delta.dy / screenHalfHeight).clamp(0.0, 1.0);
+        _brightnessVisible = true;
       });
       ScreenBrightness().setScreenBrightness(_brightness);
     } else {
       setState(() {
         _volume =
             (_volume - details.delta.dy / screenHalfHeight).clamp(0.0, 1.0);
+        _volumeVisible = true;
       });
       FlutterVolumeController.setVolume(_volume);
     }
