@@ -133,9 +133,6 @@ class HistoryService {
   static HistoryService? _instance;
 
   static Future<HistoryService> _getInstance() async {
-    // TODO(xminent): Debug delete.
-    await _storage.delete(key: "history");
-
     if (_instance != null) {
       return _instance!;
     }
@@ -236,7 +233,7 @@ class HistoryService {
     history.removeAt(idx);
     history.add(element);
 
-    _storage.write(
+    await _storage.write(
       key: "history",
       value: jsonEncode(history),
     );
@@ -268,7 +265,7 @@ class HistoryService {
     final instance = await _getInstance();
 
     instance._history.clear();
-    _storage.delete(key: "history");
+    await _storage.delete(key: "history");
     await notifyListeners();
   }
 

@@ -116,7 +116,13 @@ class _HistoryScreenState extends State<HistoryScreen>
                         prints("You selected: $value");
 
                         if (value == "clear") {
-                          HistoryService.clearHistory();
+                          HistoryService.clearHistory().then((e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("History cleared"),
+                              ),
+                            );
+                          });
                         }
                       },
                       itemBuilder: (context) => <PopupMenuEntry<String>>[
