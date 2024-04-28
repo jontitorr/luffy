@@ -1,9 +1,7 @@
-import "dart:convert";
-
-import "package:http/http.dart" as http;
 import "package:luffy/http_client.dart";
 import "package:luffy/util.dart";
 
+const _apiUrl = "https://graphql.anilist.co";
 final _seasons = ["WINTER", "SPRING", "SUMMER", "FALL"];
 
 DateTime? _parseDateObj(Map<String, dynamic> json) {
@@ -48,6 +46,7 @@ class AnimeInfo {
     required this.relations,
     required this.staff,
     required this.recommendations,
+    this.languages = const [],
   });
 
   AnimeInfo.fromJson(Map<String, dynamic> json)
@@ -87,7 +86,10 @@ class AnimeInfo {
           json["recommendations"]["nodes"]
               .where((node) => node["mediaRecommendation"] != null)
               .map((x) => SearchResult.fromJson(x["mediaRecommendation"])),
-        );
+        ),
+        languages = List<String>.from(
+          (json["staff"]?["edges"] ?? []).map((x) => x["node"]["languageV2"]),
+        ).toSet().toList();
 
   final int id;
   final bool isFavorite;
@@ -112,6 +114,7 @@ class AnimeInfo {
   final List<Relation> relations;
   final List<StaffPreview> staff;
   final List<SearchResult> recommendations;
+  final List<String> languages;
 }
 
 class NextAiringEpisode {
@@ -391,16 +394,16 @@ class AnilistService {
     };
 
     try {
-      final res = await http.post(
-        Uri.parse("https://graphql.anilist.co/"),
-        body: params,
+      final res = await HttpClient.post(
+        _apiUrl,
+        data: params,
       );
 
       if (res.statusCode != 200) {
         return [];
       }
 
-      final data = jsonDecode(res.body)["data"]["Page"]["media"];
+      final data = res.data["data"]["Page"]["media"];
       final ret = <SearchResult>[];
 
       for (final item in data) {
@@ -424,16 +427,16 @@ class AnilistService {
   }) async {
     final params = {
       "query":
-          "{Media(${isMalId ? "idMal" : "id"}:$id){id mediaListEntry{id status score(format:POINT_100)progress private notes repeat customLists updatedAt startedAt{year month day}completedAt{year month day}}isFavourite siteUrl idMal nextAiringEpisode{episode airingAt}source countryOfOrigin format duration season seasonYear startDate{year month day}endDate{year month day}genres studios(isMain:true){nodes{id name siteUrl}}description trailer{site id}synonyms tags{name rank isMediaSpoiler}characters(sort:[ROLE,FAVOURITES_DESC],perPage:25,page:1){edges{role node{id image{medium}name{userPreferred}}}}relations{edges{relationType(version:2)node{id idMal mediaListEntry{progress private score(format:POINT_100)status}episodes chapters nextAiringEpisode{episode}popularity meanScore isAdult isFavourite format title{english romaji userPreferred}type status(version:2)bannerImage coverImage{large}}}}staffPreview:staff(perPage:8,sort:[RELEVANCE,ID]){edges{role node{id name{userPreferred}}}}recommendations(sort:RATING_DESC){nodes{mediaRecommendation{id idMal mediaListEntry{progress private score(format:POINT_100)status}episodes chapters nextAiringEpisode{episode}meanScore isAdult isFavourite format title{english romaji userPreferred}type status(version:2)bannerImage coverImage{large}}}}externalLinks{url site}}}",
+          "{Media(${isMalId ? "idMal" : "id"}:$id){id mediaListEntry{id status score(format:POINT_100)progress private notes repeat customLists updatedAt startedAt{year month day}completedAt{year month day}}isFavourite siteUrl idMal nextAiringEpisode{episode airingAt}source countryOfOrigin format duration season seasonYear startDate{year month day}endDate{year month day}genres studios(isMain:true){nodes{id name siteUrl}}description trailer{site id}synonyms tags{name rank isMediaSpoiler}characters(sort:[ROLE,FAVOURITES_DESC],perPage:25,page:1){edges{role node{id image{medium}name{userPreferred}}}}relations{edges{relationType(version:2)node{id idMal mediaListEntry{progress private score(format:POINT_100)status}episodes chapters nextAiringEpisode{episode}popularity meanScore isAdult isFavourite format title{english romaji userPreferred}type status(version:2)bannerImage coverImage{large}}}}staffPreview:staff(perPage:8,sort:[RELEVANCE,ID]){edges{role node{id name{userPreferred}}}}recommendations(sort:RATING_DESC){nodes{mediaRecommendation{id idMal mediaListEntry{progress private score(format:POINT_100)status}episodes chapters nextAiringEpisode{episode}meanScore isAdult isFavourite format title{english romaji userPreferred}type status(version:2)bannerImage coverImage{large}}}}externalLinks{url site}staff{edges{node{languageV2}}}}}",
     };
 
-    final res = await http.post(
-      Uri.parse("https://graphql.anilist.co"),
-      body: params,
+    final res = await HttpClient.post(
+      _apiUrl,
+      data: params,
     );
 
     return AnimeInfo.fromJson(
-      jsonDecode(res.body)["data"]["Media"],
+      res.data["data"]["Media"],
     );
   }
 
@@ -446,13 +449,13 @@ class AnilistService {
           "{Page(page:$page,perPage:1){pageInfo{total perPage currentPage lastPage hasNextPage}media(type:ANIME,isAdult:false){title{romaji english native userPreferred}coverImage{large}description genres siteUrl bannerImage}}}",
     };
 
-    final res = await http.post(
-      Uri.parse("https://graphql.anilist.co"),
-      body: params,
+    final res = await HttpClient.post(
+      _apiUrl,
+      data: params,
     );
 
     return AnimeInfo.fromJson(
-      jsonDecode(res.body)["data"]["Media"],
+      res.data["data"]["Media"],
     );
   }
 
@@ -465,16 +468,16 @@ class AnilistService {
     };
 
     try {
-      final res = await http.post(
-        Uri.parse("https://graphql.anilist.co"),
-        body: params,
+      final res = await HttpClient.post(
+        _apiUrl,
+        data: params,
       );
 
       if (res.statusCode != 200) {
         return [];
       }
 
-      final data = jsonDecode(res.body)["data"]["Page"]["media"];
+      final data = res.data["data"]["Page"]["media"];
       final ret = <SearchResult>[];
 
       for (final item in data) {
@@ -502,11 +505,11 @@ class AnilistService {
     };
 
     try {
-      final res = await http.post(
-        Uri.parse("https://graphql.anilist.co"),
-        body: params,
+      final res = await HttpClient.post(
+        _apiUrl,
+        data: params,
       );
-      final data = jsonDecode(res.body)["data"]["Page"];
+      final data = res.data["data"]["Page"];
       final ret = <SearchResult>[];
 
       for (final item in data["airingSchedules"]) {
@@ -539,7 +542,7 @@ class AnilistService {
     };
 
     return HttpClient.post(
-      "https://graphql.anilist.co",
+      _apiUrl,
       data: params,
     ).then(
       (res) => PageResult.fromJson(res.data["data"]["Page"]),
@@ -561,11 +564,11 @@ class AnilistService {
     final seen = <int>{};
 
     try {
-      var res = await http.post(
-        Uri.parse("https://graphql.anilist.co"),
-        body: makeParams(page),
+      var res = await HttpClient.post(
+        _apiUrl,
+        data: makeParams(page),
       );
-      var data = jsonDecode(res.body)["data"]["Page"];
+      var data = res.data["data"]["Page"];
 
       for (final item in data["airingSchedules"]) {
         if (item["media"]?["countryOfOrigin"] == "CN") {
@@ -583,11 +586,11 @@ class AnilistService {
       }
 
       while (data["pageInfo"]["hasNextPage"]) {
-        res = await http.post(
-          Uri.parse("https://graphql.anilist.co"),
-          body: makeParams(++page),
+        res = await HttpClient.post(
+          _apiUrl,
+          data: makeParams(++page),
         );
-        data = jsonDecode(res.body)["data"]["Page"];
+        data = res.data["data"]["Page"];
 
         for (final item in data["airingSchedules"]) {
           if (item["media"]?["countryOfOrigin"] == "CN") {
@@ -639,7 +642,7 @@ class AnilistService {
 
     try {
       final ret = await HttpClient.post(
-        "https://graphql.anilist.co",
+        _apiUrl,
         data: params,
       ).then((res) => BrowseResult.fromJson(res.data["data"]));
       return ret;
@@ -656,7 +659,7 @@ class AnilistService {
     };
 
     return HttpClient.post(
-      "https://graphql.anilist.co",
+      _apiUrl,
       data: params,
     ).then((res) => GenresAndTags.fromJson(res.data["data"]));
   }
@@ -682,7 +685,7 @@ class AnilistService {
     };
 
     return HttpClient.post(
-      "https://graphql.anilist.co",
+      _apiUrl,
       data: params,
     ).then(
       (res) => PageResult.fromJson(res.data["data"]["Page"]),

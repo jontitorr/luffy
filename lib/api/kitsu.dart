@@ -1,6 +1,4 @@
-import "dart:convert";
-
-import "package:http/http.dart" as http;
+import "package:luffy/http_client.dart";
 import "package:luffy/util.dart";
 
 class Episode {
@@ -29,15 +27,15 @@ class KituService {
   static Future<List<Episode>> search(int animeId) async {
     final params = {
       "query":
-          "query {  lookupMapping(externalId: $animeId, externalSite: ANILIST_ANIME) {    __typename    ... on Anime {      id      episodes(first: 2000) {        nodes {          number          titles {            canonical          }          description          thumbnail {            original {              url            }          }        }      }    }  }}",
+          "query{lookupMapping(externalId:$animeId,externalSite:ANILIST_ANIME){__typename...on Anime{id episodes(first:2000){nodes{number titles{canonical}description thumbnail{original{url}}}}}}}",
     };
 
     try {
-      final res = await http.post(
-        Uri.parse("https://kitsu.io/api/graphql"),
-        body: params,
+      final res = await HttpClient.post(
+        "https://kitsu.io/api/graphql",
+        data: params,
       );
-      final data = jsonDecode(res.body)["data"]["lookupMapping"];
+      final data = res.data["data"]["lookupMapping"];
       final ret = <Episode>[];
 
       for (final episode in data["episodes"]["nodes"]) {
