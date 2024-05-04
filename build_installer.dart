@@ -15,12 +15,12 @@ void main() {
       ),
     ),
     files: InnoSetupFiles(
-      executable: File("build/windows/runner/Release/luffy.exe"),
-      location: Directory("build/windows/runner/Release"),
+      executable: File("build/windows/x64/runner/Release/luffy.exe"),
+      location: Directory("build/windows/x64/runner/Release"),
     ),
     name: const InnoSetupName("windows_installer"),
     location: InnoSetupInstallerDirectory(
-      Directory("build/windows/Release"),
+      Directory("build/windows/x64/runner/Release"),
     ),
     icon: InnoSetupIcon(
       File("assets/images/logo.ico"),
