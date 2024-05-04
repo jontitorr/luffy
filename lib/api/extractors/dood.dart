@@ -1,18 +1,6 @@
-import "dart:math";
-
 import "package:http/http.dart" as http;
 import "package:luffy/api/anime.dart";
 import "package:luffy/util.dart";
-
-String _randomString({int length = 10}) {
-  const allowedChars =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  return List.generate(
-    length,
-    (index) =>
-        allowedChars.runes.elementAt(Random().nextInt(allowedChars.length)),
-  ).join();
-}
 
 Future<List<VideoSource>> doodExtractor(
   String url, {

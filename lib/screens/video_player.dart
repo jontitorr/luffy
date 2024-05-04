@@ -181,6 +181,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       }
 
       setState(() {
+        _currentEpisodeNum = episodeNum;
         _currentSourceIdx = 0;
         _currentSubtitle = sources.first.subtitle;
 

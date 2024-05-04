@@ -338,76 +338,68 @@ class _ControlsOverlayState extends State<ControlsOverlay> {
                 child: Stack(
                   children: [
                     Align(
-                      child: Container(
-                        decoration: const BoxDecoration(
-                            // border: Border.all(color: Colors.green),
+                      child: SizedBox(
+                        width: 0.6 * width,
+                        height: 0.25 * height,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Flexible(
+                              child: IconButton(
+                                onPressed: widget.onRewind,
+                                icon: const Icon(
+                                  Icons.replay_10,
+                                  color: Colors.white,
+                                ),
+                                iconSize: 70,
+                              ),
                             ),
-                        child: SizedBox(
-                          width: 0.6 * width,
-                          height: 0.25 * height,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
+                            if (widget.isBuffering)
+                              const Flexible(
+                                child: SizedBox(
+                                  width: 70,
+                                  height: 70,
+                                  child: Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                ),
+                              )
+                            else
                               Flexible(
                                 child: IconButton(
-                                  onPressed: widget.onRewind,
-                                  icon: const Icon(
-                                    Icons.replay_10,
+                                  onPressed: () {
+                                    widget.onPlayPause();
+                                    setState(() {
+                                      _skippedIntro = false;
+                                    });
+                                  },
+                                  icon: Icon(
+                                    widget.isPlaying
+                                        ? Icons.pause
+                                        : Icons.play_arrow,
                                     color: Colors.white,
                                   ),
                                   iconSize: 70,
                                 ),
                               ),
-                              if (widget.isBuffering)
-                                const Flexible(
-                                  child: SizedBox(
-                                    width: 70,
-                                    height: 70,
-                                    child: Center(
-                                      child: CircularProgressIndicator(),
-                                    ),
-                                  ),
-                                )
-                              else
-                                Flexible(
-                                  child: IconButton(
-                                    onPressed: () {
-                                      widget.onPlayPause();
-                                      setState(() {
-                                        _skippedIntro = false;
-                                      });
-                                    },
-                                    icon: Icon(
-                                      widget.isPlaying
-                                          ? Icons.pause
-                                          : Icons.play_arrow,
-                                      color: Colors.white,
-                                    ),
-                                    iconSize: 70,
-                                  ),
+                            Flexible(
+                              child: IconButton(
+                                onPressed: widget.onFastForward,
+                                icon: const Icon(
+                                  Icons.forward_10,
+                                  color: Colors.white,
                                 ),
-                              Flexible(
-                                child: IconButton(
-                                  onPressed: widget.onFastForward,
-                                  icon: const Icon(
-                                    Icons.forward_10,
-                                    color: Colors.white,
-                                  ),
-                                  iconSize: 70,
-                                ),
+                                iconSize: 70,
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                     Align(
                       alignment: Alignment.bottomCenter,
                       child: AnimatedContainer(
-                        decoration: const BoxDecoration(
-                            // border: Border.all(color: Colors.green),
-                            ),
                         height: _showControls ? 0.3 * height : 0,
                         duration: const Duration(milliseconds: 100),
                         curve: Curves.easeInOut,
@@ -417,11 +409,6 @@ class _ControlsOverlayState extends State<ControlsOverlay> {
                               Flexible(
                                 child: Container(
                                   padding: const EdgeInsets.only(right: 8),
-                                  // decoration: BoxDecoration(
-                                  //   border: Border.all(
-                                  //       // color: Colors.blue,
-                                  //       ),
-                                  // ),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.end,
                                     children: [
