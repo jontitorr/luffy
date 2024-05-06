@@ -1067,13 +1067,6 @@ Future<AnimeList> _convertJsonToAnimeList(Map<String, dynamic> json) async {
       watchedEpisodes: item["watchedEpisodes"],
       totalEpisodes: totalEpisodes == 0 ? null : totalEpisodes,
       isRewatching: item["reDoing"],
-      startDate: null,
-      endDate: null,
-      coverImageUrl: null,
-      kitsuId: null,
-      titleEnJp: null,
-      titleJaJp: null,
-      type: null,
     );
 
     toModify.add(animeListEntry);
@@ -1264,11 +1257,13 @@ Future<AnimeList> _convertJsonToAnimeList(Map<String, dynamic> json) async {
     animeListUnformatted[entry.id.toString()] = entry;
   }
 
-  animeList.watching.forEach(addToMap);
-  animeList.completed.forEach(addToMap);
-  animeList.onHold.forEach(addToMap);
-  animeList.dropped.forEach(addToMap);
-  animeList.planToWatch.forEach(addToMap);
+  [
+    ...animeList.watching,
+    ...animeList.completed,
+    ...animeList.onHold,
+    ...animeList.dropped,
+    ...animeList.planToWatch,
+  ].forEach(addToMap);
 
   await _storage.write(
     key: "anime_list_unformatted",
@@ -1350,14 +1345,14 @@ class AnimeListEntry {
     required this.watchedEpisodes,
     required this.totalEpisodes,
     required this.isRewatching,
-    required this.startDate,
-    required this.endDate,
-    required this.kitsuId,
-    required this.coverImageUrl,
-    required this.titleEnJp,
-    required this.titleJaJp,
-    required this.type,
-    this.extraData = "",
+    this.startDate,
+    this.endDate,
+    this.kitsuId,
+    this.coverImageUrl,
+    this.titleEnJp,
+    this.titleJaJp,
+    this.type,
+    this.showId,
   });
 
   AnimeListEntry.fromJson(Map<String, dynamic> json)
@@ -1379,7 +1374,7 @@ class AnimeListEntry {
         titleEnJp = json["titleEnJp"],
         titleJaJp = json["titleJaJp"],
         type = json["type"] != null ? AnimeType.values[json["type"]] : null,
-        extraData = "";
+        showId = json["showId"];
 
   int id;
   String title;
@@ -1396,7 +1391,7 @@ class AnimeListEntry {
   String? titleEnJp; // the title in english japanese
   String? titleJaJp; // the title in actual japanese
   AnimeType? type;
-  String extraData;
+  String? showId;
 
   Map<String, dynamic> toJson() {
     return {
@@ -1415,6 +1410,7 @@ class AnimeListEntry {
       "titleEnJp": titleEnJp,
       "titleJaJp": titleJaJp,
       "type": type?.index,
+      "showId": showId,
     };
   }
 }
