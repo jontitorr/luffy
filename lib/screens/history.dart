@@ -310,10 +310,10 @@ class _Card extends StatelessWidget {
             child: InkWell(
               splashColor: Colors.black.withOpacity(0.2),
               onTap: () async {
-                final sourceName = entry.id.split("-").elementAt(0);
+                final sourceName = entry.id.split("-").elementAtOrNull(0);
                 final extractor =
                     sources.firstWhereOrNull((e) => e.name == sourceName);
-                if (extractor == null) {
+                if (sourceName == null || extractor == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text("Failed to find source!"),
@@ -354,7 +354,20 @@ class _Card extends StatelessWidget {
                     )
                     .toList();
                 final latestEpisode =
-                    entry.progress.values.lastOrNull?.episodeNum ?? 0;
+                    entry.progress.values.lastOrNull?.episodeNum;
+
+                if (latestEpisode == null || episodes.length <= latestEpisode) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("No results found!"),
+                        duration: Duration(seconds: 3),
+                      ),
+                    );
+                  }
+
+                  return;
+                }
 
                 if (context.mounted) {
                   Navigator.push(
@@ -397,6 +410,7 @@ class _Card extends StatelessWidget {
                   MaterialPageRoute(
                     builder: (context) => DetailsScreen(
                       animeId: entry.animeId,
+                      showId: entry.id,
                       title: entry.title,
                       imageUrl: entry.imageUrl,
                       totalEpisodes: entry.totalEpisodes,
