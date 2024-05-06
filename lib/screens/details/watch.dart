@@ -9,7 +9,6 @@ import "package:luffy/components/episode_list.dart";
 import "package:luffy/screens/video_player.dart";
 import "package:luffy/util.dart";
 import "package:string_similarity/string_similarity.dart";
-import "package:tuple/tuple.dart";
 
 class _Data {
   _Data({
@@ -111,6 +110,18 @@ class _WatchScreenState extends State<WatchScreen>
       return _extractor.search(widget.title);
     }
 
+    final sourceName = widget.showId?.split("-").firstOrNull;
+
+    if (sourceName != null) {
+      setState(() {});
+      _extractorIndex =
+          sources.indexWhere((element) => element.name == sourceName);
+      _extractor = sources[_extractorIndex];
+      final ret = await _extractor.search(widget.title);
+      setState(() {});
+      return ret;
+    }
+
     prints("Extractor index BEFORE: $_extractorIndex");
 
     for (; _extractorIndex < sources.length; _extractorIndex++) {
@@ -146,20 +157,20 @@ class _WatchScreenState extends State<WatchScreen>
     });
   }
 
-  Tuple2<List<Widget>, double?> _buildLocalResumeButton(
+  (List<Widget>, double?) _buildLocalResumeButton(
     _Data data,
   ) {
     final episodeProgress = data.progress;
 
     if (episodeProgress.isEmpty) {
-      return const Tuple2([], null);
+      return ([], null);
     }
 
     final recentProgress = episodeProgress.entries.reduce(
       (value, element) => element.value > value.value ? element : value,
     );
 
-    return Tuple2(
+    return (
       [
         TextButton(
           style: ButtonStyle(
@@ -229,7 +240,7 @@ class _WatchScreenState extends State<WatchScreen>
   List<Widget> _buildResumeButton(_Data data) {
     final localResume = _buildLocalResumeButton(data);
     final primaryColor = Theme.of(context).colorScheme.primary;
-    final recentProgress = localResume.item2;
+    final recentProgress = localResume.$2;
     final progressBar = recentProgress != null && recentProgress.isFinite
         ? [
             LinearProgressIndicator(
@@ -248,7 +259,7 @@ class _WatchScreenState extends State<WatchScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                ...localResume.item1,
+                ...localResume.$1,
                 ..._buildMalWatchButton(data),
               ],
             ),
@@ -287,7 +298,7 @@ class _WatchScreenState extends State<WatchScreen>
     final progress = await Navigator.of(context).push<double>(
       MaterialPageRoute(
         builder: (_) => VideoPlayerScreen(
-          showId: widget.showId ?? "${_extractor.name}-${widget.animeId}",
+          showId: "${_extractor.name}-${widget.animeId}",
           showTitle: widget.title,
           episode: episodes[idx],
           episodeNum: idx,
