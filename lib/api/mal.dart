@@ -8,7 +8,6 @@ import "package:http/http.dart" as http;
 import "package:luffy/auth.dart";
 import "package:luffy/main.dart";
 import "package:luffy/util.dart";
-import "package:tuple/tuple.dart";
 
 int _apiReqCounter = 0;
 const _storage = FlutterSecureStorage();
@@ -1029,8 +1028,8 @@ Future<AnimeList> _convertJsonToAnimeList(Map<String, dynamic> json) async {
   final List<AnimeListEntry> dropped = [];
   final List<AnimeListEntry> planToWatch = [];
 
-  final extraDataMap = <int, Tuple2<AnimeListStatus, int>>{};
-  final missingEpisodes = <int, Tuple2<AnimeListStatus, int>>{};
+  final extraDataMap = <int, (AnimeListStatus, int)>{};
+  final missingEpisodes = <int, (AnimeListStatus, int)>{};
 
   items.forEach((_, item) {
     final id = item["id"] as int;
@@ -1052,10 +1051,10 @@ Future<AnimeList> _convertJsonToAnimeList(Map<String, dynamic> json) async {
       }
     })();
 
-    extraDataMap[id] = Tuple2(status, toModify.length);
+    extraDataMap[id] = (status, toModify.length);
 
     if (totalEpisodes == 0) {
-      missingEpisodes[id] = Tuple2(status, toModify.length);
+      missingEpisodes[id] = (status, toModify.length);
     }
 
     final animeListEntry = AnimeListEntry(
@@ -1156,7 +1155,7 @@ Future<AnimeList> _convertJsonToAnimeList(Map<String, dynamic> json) async {
       return;
     }
 
-    final status = extraDataMap[id];
+    final (status, epNum) = extraDataMap[id]!;
     final startDateStr = data["StartDate"] as String?;
     final endDateStr = data["EndDate"] as String?;
     final startDate =
@@ -1164,12 +1163,8 @@ Future<AnimeList> _convertJsonToAnimeList(Map<String, dynamic> json) async {
     final endDate =
         endDateStr != null ? DateTime.parse(endDateStr).toLocal() : null;
 
-    if (status == null) {
-      return;
-    }
-
     final toModify = (() {
-      switch (status.item1) {
+      switch (status) {
         case AnimeListStatus.watching:
           return animeList.watching;
         case AnimeListStatus.completed:
@@ -1181,7 +1176,7 @@ Future<AnimeList> _convertJsonToAnimeList(Map<String, dynamic> json) async {
         case AnimeListStatus.planToWatch:
           return animeList.planToWatch;
       }
-    })()[status.item2];
+    })()[epNum];
 
     toModify.startDate = startDate;
     toModify.endDate = endDate;
@@ -1220,28 +1215,24 @@ Future<AnimeList> _convertJsonToAnimeList(Map<String, dynamic> json) async {
           return;
         }
 
-        final status = missingEpisodes[id];
+        final (status, epNum) = missingEpisodes[id]!;
         final totalEpisodes = (item["episode"] as int) - 1;
 
-        if (status == null) {
-          return;
-        }
-
-        switch (status.item1) {
+        switch (status) {
           case AnimeListStatus.watching:
-            animeList.watching[status.item2].totalEpisodes = totalEpisodes;
+            animeList.watching[epNum].totalEpisodes = totalEpisodes;
             break;
           case AnimeListStatus.completed:
-            animeList.completed[status.item2].totalEpisodes = totalEpisodes;
+            animeList.completed[epNum].totalEpisodes = totalEpisodes;
             break;
           case AnimeListStatus.onHold:
-            animeList.onHold[status.item2].totalEpisodes = totalEpisodes;
+            animeList.onHold[epNum].totalEpisodes = totalEpisodes;
             break;
           case AnimeListStatus.dropped:
-            animeList.dropped[status.item2].totalEpisodes = totalEpisodes;
+            animeList.dropped[epNum].totalEpisodes = totalEpisodes;
             break;
           case AnimeListStatus.planToWatch:
-            animeList.planToWatch[status.item2].totalEpisodes = totalEpisodes;
+            animeList.planToWatch[epNum].totalEpisodes = totalEpisodes;
             break;
         }
       });
@@ -1376,7 +1367,7 @@ class AnimeListEntry {
         type = json["type"] != null ? AnimeType.values[json["type"]] : null,
         showId = json["showId"];
 
-  int id;
+  int? id;
   String title;
   String imageUrl;
   AnimeListStatus status;
